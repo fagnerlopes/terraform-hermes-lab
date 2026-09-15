@@ -22,8 +22,12 @@ Você precisa de:
 
    ```bash
    sudo apt-get update
-   sudo apt-get install -y docker.io docker-compose-plugin make jq openssh-client
+   sudo apt-get install -y make jq openssh-client openssl curl
    ```
+
+   Mais o **Docker**, que no WSL normalmente vem do Docker Desktop e não do
+   `apt` — veja a seção abaixo. Em Linux nativo:
+   `sudo apt-get install -y docker.io docker-compose-plugin`
 
    O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
    estiver faltando.
@@ -62,6 +66,16 @@ Confira que está tudo certo com:
 ```bash
 docker run --rm hello-world
 ```
+
+**Adiantando o download.** O `make up` baixa a imagem do Terraform e os
+providers na primeira execução. Numa rede de evento, com muita gente baixando
+ao mesmo tempo, isso vira gargalo. Se puder rodar antes, com calma:
+
+```bash
+make install
+```
+
+Ele só prepara o ambiente — não cria nada na sua conta e não custa nada.
 
 ---
 
@@ -138,6 +152,7 @@ final do workshop** — a VM continua sendo cobrada enquanto existir.
 | `make logs` | Acompanha o log da instalação dentro da VM |
 | `make down` | Destrói tudo |
 | `make setup` | Refaz o `terraform.tfvars` (troca de conta, chave rotacionada) |
+| `make install` | Baixa a imagem do Terraform e os providers, sem criar nada |
 | `make help` | Lista todos os comandos |
 
 ---
