@@ -16,17 +16,17 @@ Você precisa de:
 
    Contrate em <https://www.locaweb.com.br/locaweb-cloud/> e aplique o cupom
    que o time do TDC enviou para você. Ele foi gerado para este workshop e
-   cobre os recursos de computação que vamos usar aqui — **e mais 30 dias
-   depois do evento**.
+   cobre os recursos de computação que vamos usar aqui — **e vale até
+   30/10/2026**.
 
-   Esses 30 dias são o melhor da história: o agente que você vai construir hoje
-   não morre quando a palestra acabar. Ele continua rodando, na sua conta, na
-   sua infraestrutura, para você continuar mexendo, quebrando e refazendo com
+   Esse prazo é o melhor da história: o agente que você vai construir hoje não
+   morre quando a palestra acabar. Ele continua rodando, na sua conta, na sua
+   infraestrutura, para você continuar mexendo, quebrando e refazendo com
    calma. É tempo para experimentar o Locaweb Cloud de verdade, com uma coisa
    sua rodando em cima dele.
 
    O Locaweb Cloud é pós-pago: você paga pelo que usar, e o cupom cobre esse
-   consumo durante o período. Terminado ele, o que continuar de pé volta a ser
+   consumo até 30/10/2026. A partir daí, o que continuar de pé volta a ser
    cobrado normalmente — veja [Ao terminar](#ao-terminar) para desligar quando
    quiser.
 
@@ -188,13 +188,36 @@ pré-requisitos. Daí em diante, seguimos juntos no workshop.
 
 ## Ao terminar
 
-**Não desligue nada quando a palestra acabar.** O cupom do TDC cobre os 30 dias
-seguintes, e o laboratório é seu nesse período: deixe o agente de pé, volte nele
+**Não desligue nada quando a palestra acabar.** O cupom do TDC vale até
+**30/10/2026**, e o laboratório é seu até lá: deixe o agente de pé, volte nele
 durante a semana, quebre, refaça, instale o que quiser. Foi para isso que o
 cupom existe.
 
-Quando você tiver terminado de experimentar — ou perto de encerrar o período do
-cupom:
+O que fazer antes de ir embora depende de onde você está rodando.
+
+### Se o computador não é seu
+
+É o caso da máquina emprestada do evento. Apague suas credenciais dela:
+
+```bash
+make clear
+```
+
+Remove desta pasta o `terraform.tfvars` (suas chaves de API), o
+`terraform.tfstate` (que guarda a senha da VM), o `CREDENCIAIS.txt` e a sua
+chave SSH em `tools/`. Ele mostra o que vai apagar e pede confirmação.
+
+**Leve o `CREDENCIAIS.txt` com você antes** — tire uma foto, copie para o
+celular, mande para você mesmo. Com a senha dele você ainda entra na VM pelo
+console web do painel, mesmo sem a chave SSH.
+
+E atenção: junto com o state vai embora o `make down`. Se quiser destruir a VM
+depois, será pelo painel da Locaweb.
+
+### Se o computador é seu
+
+Deixe tudo como está e continue usando. Quando terminar de experimentar — ou
+perto de 30/10/2026, para não ser cobrado:
 
 ```bash
 make down
@@ -203,29 +226,21 @@ make down
 Destrói a VM, a rede e o IP público, e apaga a chave SSH local junto com o
 `CREDENCIAIS.txt`.
 
-Depois que o período do cupom terminar, o que continuar existindo passa a ser
-cobrado na sua conta. Se você quiser seguir com o agente no ar além disso,
-ótimo — só vale saber que a partir dali a conta é sua.
+Você também pode destruir e subir de novo quantas vezes quiser: `make down`
+hoje, `make up` amanhã. São uns 15 minutos para ter tudo no ar de novo, do
+zero. O que não volta é o que você tiver configurado dentro da VM.
 
-### Limpando suas credenciais da máquina
+Passada a data do cupom, o que continuar existindo passa a ser cobrado na sua
+conta. Se quiser seguir com o agente no ar além disso, ótimo — só vale saber
+que a partir dali a conta é sua.
 
-O `make down` destrói a infraestrutura, mas **não** apaga as suas chaves de API
-da Locaweb: elas ficam no `terraform.tfvars`. Se a máquina não é sua — um
-notebook emprestado, um laboratório da faculdade, uma máquina do evento —
-apague-as antes de sair:
+### Se as suas chaves rodaram numa máquina que não é sua
 
-```bash
-rm -f terraform.tfvars
-```
+O `make clear` apaga os arquivos, mas não há como garantir que ninguém copiou
+nada antes. O mais seguro é gerar chaves novas no painel (Perfil → **Gerar
+novas chaves API/Secretas**): isso invalida as antigas, tenham elas ficado onde
+tiverem ficado.
 
-> **A ordem importa.** Rode `make down` **antes** de apagar qualquer coisa. O
-> `terraform.tfstate` é o registro do que existe na sua conta; sem ele o
-> Terraform não sabe mais o que destruir, e a VM continua de pé sendo cobrada.
-> Nesse caso só resta apagá-la à mão pelo painel.
-
-E, se as chaves chegaram a rodar numa máquina que não é sua, o mais seguro é
-gerar novas no painel (Perfil → Gerar novas chaves API/Secretas): isso invalida
-as antigas, tenham elas ficado onde tiverem ficado.
 
 ---
 
@@ -240,6 +255,7 @@ as antigas, tenham elas ficado onde tiverem ficado.
 | `make status` | Mostra em que fase está a instalação |
 | `make logs` | Acompanha o log da instalação dentro da VM |
 | `make down` | Destrói tudo, e apaga a chave local e o `CREDENCIAIS.txt` |
+| `make clear` | Apaga só as suas credenciais desta máquina, sem tocar na VM |
 | `make setup` | Refaz o `terraform.tfvars` (troca de conta, chave rotacionada) |
 | `make install` | Baixa a imagem do Terraform e os providers, sem criar nada |
 | `make help` | Lista todos os comandos |
@@ -292,12 +308,12 @@ Ele imprime o comando de instalação de cada um. Instale e rode de novo.
 
 ## Custo
 
-O Locaweb Cloud é pós-pago e a VM gera consumo enquanto existir — mas durante o
-workshop e nos 30 dias seguintes esse consumo está coberto pelo cupom do TDC.
-Use à vontade nesse período.
+O Locaweb Cloud é pós-pago e a VM gera consumo enquanto existir — mas até
+**30/10/2026** esse consumo está coberto pelo cupom do TDC. Use à vontade nesse
+período.
 
-Terminado o cupom, o consumo passa a ser cobrado na sua conta. `make down`
-encerra: ele destrói a VM, a rede e o IP público.
+Passada a data, o consumo passa a ser cobrado na sua conta. `make down` encerra:
+ele destrói a VM, a rede e o IP público.
 
 ---
 

@@ -105,6 +105,17 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   continua sendo definida porque o console web do painel (fora da internet
   aberta) não aceita chave — é o resgate de quem perder o `tools/`. Se mexer no
   drop-in de sshd, lembre que ele sobrepõe o `ssh_pwauth` do cloud-init.
+- **`make clear` apaga credenciais; `make down` destrói infraestrutura.** São
+  coisas diferentes e os nomes são parecidos — não unifique. O `clear` remove
+  `terraform.tfvars`, `terraform.tfstate*`, `CREDENCIAIS.txt`, `tools/` e os
+  arquivos de plano, mantendo `.terraform/` (providers não são dados de
+  ninguém e o download é caro numa rede de evento). O state entra na lista
+  porque guarda o `random_password` em texto puro — é credencial, não só
+  registro.
+- **Nunca ponha um `docker compose run` na mesma linha de receita que um
+  `read`.** Ele consome o stdin e a confirmação nunca chega: o `read` recebe
+  vazio e o comando se comporta como cancelado. Aconteceu no `clear`; a solução
+  é `</dev/null` na chamada do Terraform.
 - **`CREDENCIAIS.txt` é gerado pelo `make credentials`**, com `umask 077` e
   `chmod 600`, e removido pelo `make down` junto com a chave. Está no
   `.gitignore`; se mudar o nome, mude nos dois lugares.

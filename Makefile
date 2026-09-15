@@ -1,4 +1,4 @@
-.PHONY: help install setup up up-auto plan-and-confirm down credentials status logs ssh plan output lint fmt fmt-check validate clean ensure-setup ensure-key ensure-init wait-ready
+.PHONY: help install setup up up-auto plan-and-confirm down clear credentials status logs ssh plan output lint fmt fmt-check validate clean ensure-setup ensure-key ensure-init wait-ready
 
 GREEN := \033[0;32m
 BLUE  := \033[0;34m
@@ -152,6 +152,39 @@ down: ## Destrói a VM e apaga a chave SSH e o CREDENCIAIS.txt
 	@$(TF) destroy -auto-approve -refresh=false -input=false
 	@rm -f $(KEY) $(KEY).pub $(CREDS_FILE)
 	@echo "$(GREEN)Laboratório destruído.$(NC)"
+
+clear: ## Apaga suas credenciais desta máquina (antes de sair de um computador emprestado)
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(BLUE)  Limpando suas credenciais desta máquina$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "Serão apagados desta pasta:"
+	@for f in terraform.tfvars terraform.tfstate terraform.tfstate.backup $(CREDS_FILE) tfplan .tfplan.json; do \
+		[ -e "$$f" ] && echo "  - $$f" || true; \
+	done
+	@[ -d tools ] && echo "  - tools/ (sua chave SSH)" || true
+	@echo ""
+	@RESOURCES=$$($(TF) state list </dev/null 2>/dev/null | tr -d '\r' | grep -c . || true); \
+	if [ "$$RESOURCES" -gt 0 ] 2>/dev/null; then \
+		echo "$(RED)Atenção: seu laboratório ainda está NO AR.$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)O state também vai embora, e com ele o 'make down': depois disso a$(NC)"; \
+		echo "$(YELLOW)única forma de destruir a VM é pelo painel da Locaweb.$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Quer continuar usando a VM depois? Leve o $(CREDS_FILE) com você:$(NC)"; \
+		echo "$(YELLOW)com a senha dele dá para entrar pelo console web do painel,$(NC)"; \
+		echo "$(YELLOW)mesmo sem a chave SSH.$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Prefere destruir tudo agora? Cancele e rode 'make down'.$(NC)"; \
+		echo ""; \
+	fi; \
+	printf "Digite 'sim' para apagar: "; read ans; \
+	if [ "$$ans" != "sim" ]; then echo "$(YELLOW)Cancelado. Nada foi apagado.$(NC)"; exit 1; fi
+	@rm -rf terraform.tfvars terraform.tfstate terraform.tfstate.backup $(CREDS_FILE) tfplan .tfplan.json tools
+	@echo ""
+	@echo "$(GREEN)Pronto. Nenhuma credencial sua ficou nesta máquina.$(NC)"
+	@echo "$(BLUE)Os providers baixados (.terraform/) continuam aqui — não são seus$(NC)"
+	@echo "$(BLUE)dados, e poupam o download de quem usar esta máquina depois.$(NC)"
 
 clean: down ## Alias de 'down', mais o cleanup dos recursos do Docker
 	@docker compose down -v --remove-orphans 2>/dev/null || true
