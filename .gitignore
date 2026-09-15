@@ -23,3 +23,6 @@ terraform.rc
 # SSH keypair generated per provisioning
 tools/
 .tfplan.json
+
+# Credenciais geradas por "make up" — nunca versionar
+CREDENCIAIS.txt

@@ -92,6 +92,15 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Senha existe, mas não vale por SSH.** `ssh_pwauth: false` e
+  `PermitRootLogin prohibit-password`: a porta 22 fica aberta para a internet e
+  senha ali é superfície de força bruta. A senha do `random_password.root`
+  continua sendo definida porque o console web do painel (fora da internet
+  aberta) não aceita chave — é o resgate de quem perder o `tools/`. Se mexer no
+  drop-in de sshd, lembre que ele sobrepõe o `ssh_pwauth` do cloud-init.
+- **`CREDENCIAIS.txt` é gerado pelo `make credentials`**, com `umask 077` e
+  `chmod 600`, e removido pelo `make down` junto com a chave. Está no
+  `.gitignore`; se mudar o nome, mude nos dois lugares.
 - **O gateway roda em escopo de USUÁRIO do systemd.** `systemctl list-units`
   não o mostra; é preciso `systemctl --user`. Confirmado numa VM real: o
   `hermes gateway install` do cloud-init instala **e inicia** o serviço, mesmo

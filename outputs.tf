@@ -20,10 +20,9 @@ output "credentials" {
   description = "Dados de acesso à VM."
   sensitive   = true
   value = {
-    ip        = cloudstack_ipaddress.lab.ip_address
-    usuario   = "root"
-    senha     = random_password.root.result
-    ssh       = "ssh -i tools/hermes_lab_key -o StrictHostKeyChecking=no root@${cloudstack_ipaddress.lab.ip_address}"
-    ssh_senha = "sshpass -p '${random_password.root.result}' ssh -o StrictHostKeyChecking=no root@${cloudstack_ipaddress.lab.ip_address}"
+    ip      = cloudstack_ipaddress.lab.ip_address
+    usuario = "root"
+    senha   = random_password.root.result
+    ssh     = "ssh -i tools/hermes_lab_key -o StrictHostKeyChecking=no root@${cloudstack_ipaddress.lab.ip_address}"
   }
 }

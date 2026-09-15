@@ -10,7 +10,8 @@ NC    := \033[0m
 # breaks the shell comparisons below.
 TF := docker compose run --rm -T terraform
 
-KEY      := tools/hermes_lab_key
+KEY        := tools/hermes_lab_key
+CREDS_FILE := CREDENCIAIS.txt
 SSH_OPTS := -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=8 -o LogLevel=ERROR
 
 help: ## Mostra os comandos disponíveis
@@ -149,7 +150,7 @@ wait-ready:
 down: ## Destrói a VM e apaga a chave SSH local
 	@echo "$(YELLOW)Destruindo o laboratório...$(NC)"
 	@$(TF) destroy -auto-approve -refresh=false -input=false
-	@rm -f $(KEY) $(KEY).pub
+	@rm -f $(KEY) $(KEY).pub $(CREDS_FILE)
 	@echo "$(GREEN)Laboratório destruído.$(NC)"
 
 clean: down ## Alias de 'down', mais o cleanup dos recursos do Docker
@@ -157,11 +158,14 @@ clean: down ## Alias de 'down', mais o cleanup dos recursos do Docker
 
 # ------------------------------------------------------------------- acesso --
 
-credentials: ## Mostra IP, senha e o comando de acesso
+credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 	@CREDS=$$($(TF) output -json credentials 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$CREDS" ] || [ "$$CREDS" = "null" ]; then \
 		echo "$(YELLOW)Sem dados ainda. Rode 'make up' primeiro.$(NC)"; exit 0; \
 	fi; \
+	umask 077; \
+	echo "$$CREDS" | jq -r '"Laboratório Hermes — TDC São Paulo", "==================================", "", "IP público: " + .ip, "Usuário:    " + .usuario, "Senha:      " + .senha, "", "Entrar por SSH (use sempre este caminho):", "  " + .ssh, "", "A senha NÃO funciona por SSH — o acesso remoto é só por chave.", "Ela serve no console web do painel, caso você perca a chave:", "  https://painel-cloud.locaweb.com.br", "", "Ao terminar o workshop, destrua o laboratório para não ser cobrado:", "  make down", "", "Guarde este arquivo antes de ir embora: ele não é recuperável", "depois que a VM for destruída."' > $(CREDS_FILE); \
+	chmod 600 $(CREDS_FILE); \
 	echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
 	echo "$(BLUE)  Seu laboratório Hermes$(NC)"; \
 	echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
@@ -169,7 +173,8 @@ credentials: ## Mostra IP, senha e o comando de acesso
 	echo "$(GREEN)  Já dentro da VM, o próximo passo é:$(NC)"; \
 	echo "    hermes setup"; \
 	echo ""; \
-	echo "$(YELLOW)  A senha acima não é recuperável depois que o lab for destruído.$(NC)"; \
+	echo "$(YELLOW)  A senha não funciona por SSH — só no console web do painel.$(NC)"; \
+	echo "$(GREEN)  Salvo também em $(CREDS_FILE) (não versionado). Leve com você.$(NC)"; \
 	echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 
 ssh: ## Abre uma sessão SSH na VM

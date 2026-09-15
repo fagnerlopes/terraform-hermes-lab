@@ -132,6 +132,15 @@ Ou, se preferir o comando cru, ele aparece em:
 make credentials
 ```
 
+Esse comando também grava um **`CREDENCIAIS.txt`** na pasta do repositório, com
+IP, usuário e senha. Ele não vai para o Git. **Guarde esse arquivo antes de ir
+embora** — depois que o laboratório for destruído, a senha não é recuperável.
+
+O acesso por SSH é **somente com chave**. A senha não funciona por SSH: a VM
+fica com a porta 22 aberta para a internet, e senha ali é convite para força
+bruta. Ela serve no **console web** do painel da Locaweb, que é o seu resgate
+caso perca a chave em `tools/`.
+
 Assim que entrar, o arquivo `/root/COMECE-AQUI.txt` resume os próximos passos.
 O primeiro é:
 
@@ -161,7 +170,7 @@ final do workshop** — a VM continua sendo cobrada enquanto existir.
 | `make up` | Cria a VM e instala o Hermes (10–20 min), mostrando antes o que será feito |
 | `make up-auto` | O mesmo, sem resumo nem confirmação |
 | `make ssh` | Abre uma sessão SSH na VM |
-| `make credentials` | Mostra IP, senha e comando de acesso |
+| `make credentials` | Mostra IP e senha, e grava o `CREDENCIAIS.txt` |
 | `make status` | Mostra em que fase está a instalação |
 | `make logs` | Acompanha o log da instalação dentro da VM |
 | `make down` | Destrói tudo |
