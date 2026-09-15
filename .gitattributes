@@ -1,0 +1,17 @@
+# Participants run this from WSL, but may clone with Windows Git, whose
+# core.autocrlf default rewrites files to CRLF. A CRLF shell script fails as
+# "bad interpreter: /usr/bin/env^M" and a CRLF cloud-init is fed verbatim to
+# the VM. Force LF on everything the Linux side executes or parses.
+* text=auto eol=lf
+
+*.sh            text eol=lf
+*.tf            text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.hcl           text eol=lf
+Makefile        text eol=lf
+Dockerfile      text eol=lf
+.gitignore      text eol=lf
+*.example       text eol=lf
+
+*.png binary

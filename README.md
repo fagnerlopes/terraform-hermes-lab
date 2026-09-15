@@ -18,7 +18,7 @@ Você precisa de:
    - clique em **Gerar novas chaves API/Secretas**
    - deixe a aba aberta — você vai colar as duas chaves daqui a pouco
 
-2. **Linux ou macOS** com estes programas instalados:
+2. **Linux, WSL (Windows) ou macOS** com estes programas instalados:
 
    ```bash
    sudo apt-get update
@@ -27,6 +27,41 @@ Você precisa de:
 
    O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
    estiver faltando.
+
+### Se você está no Windows com WSL
+
+Duas armadilhas, as duas fáceis de evitar:
+
+**Clone o repositório dentro do Linux, não no disco do Windows.** Ou seja, em
+`~/terraform-hermes-lab`, e **não** em `/mnt/c/Users/...`. No disco do Windows o
+WSL ignora o `chmod`, a chave SSH fica com permissão aberta e o `ssh` se recusa
+a usá-la. O `make up` detecta isso e para com uma mensagem explicando, mas é
+mais simples já começar no lugar certo:
+
+```bash
+cd ~
+git clone <url-deste-repo>
+cd terraform-hermes-lab
+```
+
+**Use o Docker de dentro do WSL.** Se você usa Docker Desktop, ative a
+integração com a sua distro em *Settings → Resources → WSL Integration*. Se
+preferir instalar o Docker dentro do WSL, lembre de ligar o systemd — crie
+`/etc/wsl.conf` com:
+
+```ini
+[boot]
+systemd=true
+```
+
+e rode `wsl --shutdown` no PowerShell para reiniciar a distro. Sem isso o
+serviço do Docker não sobe sozinho.
+
+Confira que está tudo certo com:
+
+```bash
+docker run --rm hello-world
+```
 
 ---
 

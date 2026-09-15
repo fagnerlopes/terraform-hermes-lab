@@ -92,6 +92,14 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Guard de permissão da chave SSH.** O público roda em Windows + WSL. Em
+  `/mnt/c` o WSL ignora `chmod`, a chave sai 0777 e o `ssh` a recusa — o
+  laboratório morre esperando a VM. O `ensure-key` confere o `stat` depois do
+  `chmod` e aborta com instrução. Não troque essa verificação por heurística de
+  caminho: nem todo mount problemático começa com `/mnt`.
+- **`.gitattributes` forçando LF.** Clone feito com Git do Windows
+  (`core.autocrlf` ligado por padrão) converteria os scripts para CRLF, e um
+  `.sh` com CRLF falha como `bad interpreter: /usr/bin/env^M`.
 - **`-T` em todo `docker compose run`.** Sem isso a saída vem com `\r` e as
   comparações de shell no Makefile quebram silenciosamente.
 

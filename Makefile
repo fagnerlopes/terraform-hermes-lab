@@ -41,6 +41,21 @@ ensure-key:
 		ssh-keygen -t ed25519 -N '' -f $(KEY) -q -C "hermes-lab"; \
 	fi
 	@chmod 600 $(KEY)
+	@PERM=$$(stat -c '%a' $(KEY) 2>/dev/null || stat -f '%Lp' $(KEY) 2>/dev/null); \
+	if [ "$$PERM" != "600" ]; then \
+		echo ""; \
+		echo "$(RED)A chave SSH ficou com permissão $$PERM, e não 600.$(NC)"; \
+		echo "$(RED)O ssh vai recusar essa chave e o laboratório não sobe.$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Causa quase certa: o repositório está num disco do Windows$(NC)"; \
+		echo "$(YELLOW)(/mnt/c/...), onde o WSL ignora chmod. Diretório atual:$(NC)"; \
+		echo "  $(CURDIR)"; \
+		echo ""; \
+		echo "$(YELLOW)Solução: mova o repositório para dentro do Linux, por exemplo:$(NC)"; \
+		echo "  cp -r $(CURDIR) ~/terraform-hermes-lab && cd ~/terraform-hermes-lab"; \
+		echo ""; \
+		exit 1; \
+	fi
 
 ensure-init:
 	@if [ ! -d .terraform ]; then \
