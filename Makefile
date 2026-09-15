@@ -116,7 +116,13 @@ wait-ready:
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(RED)Não consegui obter o IP. Rode 'make output'.$(NC)"; exit 1; fi; \
 	echo ""; \
-	echo "$(BLUE)VM criada em $$IP. Instalando o Hermes Agent — isso leva de 10 a 20 minutos.$(NC)"; \
+	INITIAL=$$(ssh -i $(KEY) $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
+	if [ "$$INITIAL" = "4/4 pronto" ]; then \
+		echo "$(GREEN)A VM em $$IP já está no ar, com o Hermes instalado.$(NC)"; \
+		echo "$(GREEN)Nada foi recriado — nenhuma espera necessária.$(NC)"; \
+		exit 0; \
+	fi; \
+	echo "$(BLUE)VM em $$IP. Instalando o Hermes Agent — isso leva de 10 a 20 minutos.$(NC)"; \
 	echo "$(YELLOW)Pode deixar rodando; o progresso aparece abaixo.$(NC)"; \
 	echo ""; \
 	DONE=0; \
