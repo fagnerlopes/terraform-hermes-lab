@@ -43,8 +43,14 @@ resource "cloudstack_instance" "lab" {
   zone             = local.zone_id
   network_id       = cloudstack_network.lab.id
   keypair          = cloudstack_ssh_keypair.lab.name
-  root_disk_size   = var.root_disk_size_gb
   expunge          = true
+
+  # Do NOT set root_disk_size. The Locaweb plans ship fixed disk offerings
+  # ("large" -> d1.large.fixed, 160 GB): CloudStack ignores a requested size,
+  # creates the offering's, and every refresh then reads back a value that
+  # differs from the config. Since root_disk_size is ForceNew, that replaced
+  # the VM on EVERY apply. Left unset, the attribute is Computed and simply
+  # takes whatever the offering gives.
 
   user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
     root_password     = random_password.root.result

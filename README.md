@@ -161,7 +161,7 @@ final do workshop** — a VM continua sendo cobrada enquanto existir.
 
 | Recurso | Detalhe |
 |---------|---------|
-| VM | Ubuntu Server 24.04, plano `large` (8 GiB de RAM), disco de 40 GB |
+| VM | Ubuntu Server 24.04, plano `large` (8 GiB de RAM, disco de 160 GB) |
 | Rede | Uma guest network isolada, `10.20.1.0/24` |
 | IP público | Um, com port forward e firewall liberando **apenas a porta 22** |
 

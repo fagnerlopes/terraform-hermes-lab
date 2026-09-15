@@ -92,6 +92,14 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Nunca declarar `root_disk_size`.** Os planos da Locaweb vêm com disk
+  offering fixo (`large` → `d1.large.fixed`, 160 GB). O CloudStack ignora o
+  tamanho pedido, cria o da oferta, e o refresh passa a ler um valor diferente
+  do declarado. Como o atributo é `ForceNew`, isso recriava a VM **em todo
+  apply** — um participante que rodasse `make up` duas vezes perderia a
+  máquina. Deixado sem declarar, o atributo é `Computed` e aceita o valor da
+  API. O mesmo raciocínio vale para qualquer atributo `optional+computed`:
+  confira com `terraform providers schema -json` antes de fixar valor.
 - **Firewall depois da instância, não depois do IP.** Uma guest network isolada
   do CloudStack fica em `Allocated` até a primeira VM subir; só então ela é
   implementada e ganha o roteador virtual que aplica as regras. Regra criada

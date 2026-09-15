@@ -34,12 +34,6 @@ variable "service_offering" {
   default     = "large"
 }
 
-variable "root_disk_size_gb" {
-  description = "Tamanho do disco raiz. A instalação do Hermes ocupa de 2 a 4 GB."
-  type        = number
-  default     = 40
-}
-
 variable "sandbox_cpu" {
   description = "vCPUs que o sandbox Docker do terminal do agente pode usar."
   type        = number
