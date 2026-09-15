@@ -228,3 +228,11 @@ Ele imprime o comando de instalação de cada um. Instale e rode de novo.
 
 A VM fica sendo cobrada enquanto existir. `make down` encerra a cobrança.
 Não esqueça dele ao final do workshop.
+
+---
+
+## Licença
+
+[FSL-1.1-ALv2](LICENSE) — Functional Source License, que converte para
+Apache 2.0 dois anos após cada publicação. É a mesma licença do
+[CloudWeaver](https://github.com/fagnerlopes/cloud-weaver).
