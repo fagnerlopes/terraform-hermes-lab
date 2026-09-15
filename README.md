@@ -1,0 +1,154 @@
+# Laboratório Hermes — TDC São Paulo
+
+Sobe uma VM na **Locaweb Cloud** com o **Hermes Agent** já instalado, pronta
+para o workshop. Você roda um comando, espera, e entra na máquina por SSH.
+
+A configuração do agente (provedor de LLM, GitHub, Telegram) **não** é feita
+aqui: fazemos isso juntos, ao vivo, no workshop.
+
+---
+
+## Antes de começar
+
+Você precisa de:
+
+1. **Uma conta na Locaweb Cloud** com chaves de API. Como gerar:
+   - acesse <https://painel-cloud.locaweb.com.br>
+   - clique no seu nome (canto superior direito) → **Perfil**
+   - clique em **Gerar novas chaves API/Secretas**
+   - deixe a aba aberta — você vai colar as duas chaves daqui a pouco
+
+2. **Linux ou macOS** com estes programas instalados:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y docker.io docker-compose-plugin make jq openssh-client
+   ```
+
+   O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
+   estiver faltando.
+
+---
+
+## Subindo o laboratório
+
+```bash
+git clone <url-deste-repo>
+cd terraform-hermes-lab
+make up
+```
+
+É só isso. O `make up` vai, em ordem:
+
+1. conferir os pré-requisitos;
+2. pedir suas duas chaves da API e **validá-las na hora** contra a Locaweb
+   Cloud (se estiverem erradas, você descobre em 5 segundos, não no meio do
+   provisionamento);
+3. gerar uma chave SSH exclusiva deste laboratório em `tools/`;
+4. criar a VM;
+5. acompanhar a instalação do Hermes, mostrando a fase atual;
+6. imprimir IP, senha e o comando de acesso.
+
+**A instalação leva de 10 a 20 minutos.** O instalador oficial do Hermes monta
+um ambiente Python + Node e baixa o Chromium — é normal demorar. Pode deixar
+rodando e ir tomar um café.
+
+Se a sua conexão cair no meio, nada se perde: rode `make status` para ver em
+que fase está, ou `make logs` para acompanhar o log dentro da VM.
+
+---
+
+## Entrando na VM
+
+```bash
+make ssh
+```
+
+Ou, se preferir o comando cru, ele aparece em:
+
+```bash
+make credentials
+```
+
+Assim que entrar, o arquivo `/root/COMECE-AQUI.txt` resume os próximos passos.
+O primeiro é:
+
+```bash
+hermes setup
+```
+
+Daí em diante, seguimos juntos no workshop.
+
+---
+
+## Ao terminar
+
+```bash
+make down
+```
+
+Destrói a VM, a rede e o IP público, e apaga a chave SSH local. **Rode isso ao
+final do workshop** — a VM continua sendo cobrada enquanto existir.
+
+---
+
+## Comandos
+
+| Comando | O que faz |
+|---------|-----------|
+| `make up` | Cria a VM e instala o Hermes (10–20 min) |
+| `make ssh` | Abre uma sessão SSH na VM |
+| `make credentials` | Mostra IP, senha e comando de acesso |
+| `make status` | Mostra em que fase está a instalação |
+| `make logs` | Acompanha o log da instalação dentro da VM |
+| `make down` | Destrói tudo |
+| `make setup` | Refaz o `terraform.tfvars` (troca de conta, chave rotacionada) |
+| `make help` | Lista todos os comandos |
+
+---
+
+## O que é criado na sua conta
+
+| Recurso | Detalhe |
+|---------|---------|
+| VM | Ubuntu Server 24.04, plano `large` (8 GiB de RAM), disco de 40 GB |
+| Rede | Uma guest network isolada, `10.20.1.0/24` |
+| IP público | Um, com port forward e firewall liberando **apenas a porta 22** |
+
+Dentro da VM:
+
+- **Hermes Agent** instalado no host pelo instalador oficial da Nous Research,
+  em `/usr/local/bin/hermes`, com dados em `/root/.hermes`;
+- **Docker Engine**, usado como *sandbox* das ações de terminal do agente —
+  quando o Hermes executa um comando, ele roda dentro de um container com
+  limites de CPU e memória, não direto no host;
+- o serviço do gateway **instalado, porém parado**: sem token do Telegram ele
+  não teria o que servir. Nós o ligamos no workshop, se for o caso.
+
+Nenhuma porta HTTP é aberta e não há terminal web — o acesso é só por SSH.
+
+---
+
+## Se algo der errado
+
+**`make up` falhou dizendo que as chaves foram rejeitadas.**
+Gere novas no painel (Perfil → Gerar novas chaves API/Secretas) e rode
+`make setup` de novo.
+
+**A instalação passou de 20 minutos.**
+Rode `make logs` e veja onde parou. O ponto mais comum de lentidão é o download
+do Chromium. Se o log estiver parado há muito tempo, `make down && make up`
+recomeça do zero.
+
+**`make up` reclama que algum programa não está instalado.**
+Ele imprime o comando de instalação de cada um. Instale e rode de novo.
+
+**Perdi a senha.**
+`make credentials` mostra de novo, enquanto o laboratório existir.
+
+---
+
+## Custo
+
+A VM fica sendo cobrada enquanto existir. `make down` encerra a cobrança.
+Não esqueça dele ao final do workshop.

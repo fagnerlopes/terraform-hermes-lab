@@ -1,0 +1,24 @@
+# Terraform state and plugin cache
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+
+# Credentials — never commit
+*.tfvars
+!*.tfvars.example
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config
+.terraformrc
+terraform.rc
+
+# SSH keypair generated per provisioning
+tools/

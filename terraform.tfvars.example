@@ -1,0 +1,14 @@
+# Copie para terraform.tfvars e preencha — ou rode `make setup`, que faz isso
+# por você e ainda valida as chaves contra a API.
+#
+# NÃO versione o terraform.tfvars: ele contém segredos.
+
+cloudstack_api_key    = "sua-chave-api-aqui"
+cloudstack_secret_key = "sua-chave-secreta-aqui"
+
+# Opcionais — os defaults servem para o workshop:
+# vm_name           = "hermes-lab"
+# service_offering  = "large"   # 8 GiB. Em `medium` (4 GiB) não sobra RAM para o gateway.
+# root_disk_size_gb = 40
+# sandbox_cpu       = 2
+# sandbox_memory_mb = 4096

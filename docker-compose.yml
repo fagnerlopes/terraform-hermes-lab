@@ -1,0 +1,16 @@
+services:
+  terraform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: terraform-hermes-lab:1.14
+    container_name: terraform-hermes-lab
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    stdin_open: true
+    tty: true
+    command: terraform

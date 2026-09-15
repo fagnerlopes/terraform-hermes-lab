@@ -1,0 +1,125 @@
+#cloud-config
+# Rendered by Terraform's templatefile(). Read carefully before editing:
+#   a dollar sign + {name} is replaced by Terraform;
+#   doubling the dollar sign escapes it back to a literal for the shell.
+#   Plain $VAR and $(cmd) are NOT special to HCL and need no escaping.
+#
+# Mirrors the CloudWeaver `hermes-host` recipe: Hermes installed on the host by
+# the official installer, with the agent's own terminal actions confined to a
+# Docker sandbox. No web terminal, no HTTP port — SSH only.
+#
+# The bot token and the LLM provider are deliberately NOT configured here: that
+# is done live with the participants during the workshop, via `hermes setup`.
+
+package_update: true
+locale: pt_BR.UTF-8
+timezone: America/Sao_Paulo
+
+ssh_pwauth: true
+disable_root: false
+
+packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - jq
+
+chpasswd:
+  expire: false
+  list: |
+    root:${root_password}
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-hermes-lab.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      PermitRootLogin yes
+      PasswordAuthentication yes
+
+  - path: /etc/systemd/resolved.conf.d/dns.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Resolve]
+      DNS=8.8.8.8 8.8.4.4 1.1.1.1
+      FallbackDNS=1.1.1.1 1.0.0.1
+
+  # Polled over SSH by `make up` and `make status`.
+  - path: /usr/local/bin/hermes-lab-status
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/bin/sh
+      cat /var/lib/hermes-lab/status 2>/dev/null || echo "aguardando cloud-init"
+
+  - path: /root/COMECE-AQUI.txt
+    permissions: "0644"
+    owner: root:root
+    content: |
+      Laboratório Hermes — TDC São Paulo
+      ==================================
+
+      A VM já tem o Hermes Agent instalado no host e o Docker configurado como
+      sandbox do terminal do agente. O que falta é a configuração, que fazemos
+      juntos no workshop:
+
+        1. hermes setup          # provedor de LLM e GitHub
+        2. hermes                # abre o agente no terminal
+
+      Para ligar o bot do Telegram (opcional, também no workshop):
+
+        3. printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=@SEU_ID\n' >> /root/.hermes/.env
+           chmod 600 /root/.hermes/.env
+           hermes gateway start
+
+      Diagnóstico:
+
+        hermes --version
+        hermes config get terminal.backend     # deve responder: docker
+        docker info
+        tail -f /var/log/hermes-lab.log        # log desta instalação
+
+runcmd:
+  - |
+    # Everything below is logged where `make logs` can find it.
+    exec >> /var/log/hermes-lab.log 2>&1
+    set -x
+
+    mkdir -p /var/lib/hermes-lab
+    say() { echo "$1" > /var/lib/hermes-lab/status; }
+    fail() { echo "ERRO: $1" > /var/lib/hermes-lab/status; exit 1; }
+
+    # 1) Docker Engine from the official repo. NOT the snap and NOT docker.io:
+    #    the snap build breaks the --init / no-new-privileges flags that the
+    #    Hermes terminal sandbox relies on.
+    say "1/4 instalando Docker"
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc || fail "download da chave GPG do Docker"
+    chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+    apt-get update -qq || fail "apt-get update"
+    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || fail "instalação do Docker"
+    systemctl enable --now docker
+
+    # 2) Hermes Agent, official installer. Takes 5-15 min: it builds a managed
+    #    Python + Node environment and downloads Playwright/Chromium.
+    #    --skip-setup/--non-interactive because there is no TTY in cloud-init;
+    #    the wizard is the participant's job, live.
+    say "2/4 instalando Hermes Agent (leva de 5 a 15 minutos)"
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
+      | bash -s -- --skip-setup --non-interactive --skip-computer-use --no-skills \
+      || fail "instalação do Hermes Agent"
+
+    # 3) Confine the agent's terminal/execute_code/file actions to a container.
+    say "3/4 configurando o sandbox do terminal"
+    /usr/local/bin/hermes config set terminal.backend docker || fail "hermes config set terminal.backend"
+    /usr/local/bin/hermes config set terminal.container_cpu ${sandbox_cpu}
+    /usr/local/bin/hermes config set terminal.container_memory ${sandbox_memory_mb}
+
+    # Installs the systemd unit but does NOT start it: with no bot token in
+    # /root/.hermes/.env there is nothing for the gateway to serve yet.
+    /usr/local/bin/hermes gateway install || true
+
+    say "4/4 pronto"
+    touch /var/lib/hermes-lab/ready
