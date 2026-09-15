@@ -147,7 +147,7 @@ wait-ready:
 		echo "$(YELLOW)Acompanhe com: make status   (ou make logs)$(NC)"; \
 	fi
 
-down: ## Destrói a VM e apaga a chave SSH local
+down: ## Destrói a VM e apaga a chave SSH e o CREDENCIAIS.txt
 	@echo "$(YELLOW)Destruindo o laboratório...$(NC)"
 	@$(TF) destroy -auto-approve -refresh=false -input=false
 	@rm -f $(KEY) $(KEY).pub $(CREDS_FILE)

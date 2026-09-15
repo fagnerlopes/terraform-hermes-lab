@@ -165,8 +165,29 @@ Daí em diante, seguimos juntos no workshop.
 make down
 ```
 
-Destrói a VM, a rede e o IP público, e apaga a chave SSH local. **Rode isso ao
-final do workshop** — a VM continua sendo cobrada enquanto existir.
+Destrói a VM, a rede e o IP público, e apaga a chave SSH local junto com o
+`CREDENCIAIS.txt`. **Rode isso ao final do workshop** — a VM continua sendo
+cobrada enquanto existir.
+
+### Limpando suas credenciais da máquina
+
+O `make down` destrói a infraestrutura, mas **não** apaga as suas chaves de API
+da Locaweb: elas ficam no `terraform.tfvars`. Se a máquina não é sua — um
+notebook emprestado, um laboratório da faculdade, uma máquina do evento —
+apague-as antes de sair:
+
+```bash
+rm -f terraform.tfvars
+```
+
+> **A ordem importa.** Rode `make down` **antes** de apagar qualquer coisa. O
+> `terraform.tfstate` é o registro do que existe na sua conta; sem ele o
+> Terraform não sabe mais o que destruir, e a VM continua de pé sendo cobrada.
+> Nesse caso só resta apagá-la à mão pelo painel.
+
+E, se as chaves chegaram a rodar numa máquina que não é sua, o mais seguro é
+gerar novas no painel (Perfil → Gerar novas chaves API/Secretas): isso invalida
+as antigas, tenham elas ficado onde tiverem ficado.
 
 ---
 
@@ -180,7 +201,7 @@ final do workshop** — a VM continua sendo cobrada enquanto existir.
 | `make credentials` | Mostra IP e senha, e grava o `CREDENCIAIS.txt` |
 | `make status` | Mostra em que fase está a instalação |
 | `make logs` | Acompanha o log da instalação dentro da VM |
-| `make down` | Destrói tudo |
+| `make down` | Destrói tudo, e apaga a chave local e o `CREDENCIAIS.txt` |
 | `make setup` | Refaz o `terraform.tfvars` (troca de conta, chave rotacionada) |
 | `make install` | Baixa a imagem do Terraform e os providers, sem criar nada |
 | `make help` | Lista todos os comandos |
@@ -235,6 +256,45 @@ Ele imprime o comando de instalação de cada um. Instale e rode de novo.
 
 A VM fica sendo cobrada enquanto existir. `make down` encerra a cobrança.
 Não esqueça dele ao final do workshop.
+
+---
+
+## Preparando uma máquina para vários participantes
+
+Esta seção é para quem **organiza** o workshop, não para quem participa.
+
+Se você vai clonar o disco de uma máquina para distribuir aos participantes,
+lembre que **um clone de disco não respeita o `.gitignore`**: tudo que estiver
+na pasta vai junto. Depois de testar o laboratório nessa máquina, ela contém
+suas chaves de API, o state do seu lab e a sua chave SSH — e cada participante
+receberia uma cópia de tudo isso, compartilhando as mesmas credenciais.
+
+Antes de gerar a imagem, nesta ordem:
+
+```bash
+cd ~/terraform-hermes-lab
+
+# 1. Destrua o laboratório de teste ENQUANTO o state ainda existe
+make down
+
+# 2. Remova tudo que é seu e que o clone levaria junto
+rm -rf terraform.tfvars terraform.tfstate* tools/ CREDENCIAIS.txt .terraform/
+
+# 3. Confirme que não sobrou nada
+git status --short        # tem que sair vazio
+
+# 4. Deixe o download pesado pronto na imagem
+git pull                  # garanta que a imagem sai com o código mais recente
+make install              # baixa a imagem do Terraform e os providers
+```
+
+O passo 4 é o que mais se paga: sem ele, dezenas de pessoas baixam os mesmos
+providers ao mesmo tempo na rede do evento, e isso vira gargalo logo no começo
+da aula.
+
+Vale também deixar instalados os pré-requisitos da seção
+[Antes de começar](#antes-de-começar), para que ninguém gaste tempo com
+`apt-get` durante o workshop.
 
 ---
 
