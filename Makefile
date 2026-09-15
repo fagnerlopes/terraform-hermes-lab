@@ -1,4 +1,4 @@
-.PHONY: help install setup up up-auto plan-and-confirm down clear credentials status logs ssh plan output lint fmt fmt-check validate clean ensure-setup ensure-key ensure-init wait-ready
+.PHONY: help install setup up up-auto plan-and-confirm down clear credentials status logs ssh plan output lint fmt fmt-check validate ensure-setup ensure-key ensure-init wait-ready
 
 GREEN := \033[0;32m
 BLUE  := \033[0;34m
@@ -185,9 +185,6 @@ clear: ## Apaga suas credenciais desta máquina (antes de sair de um computador 
 	@echo "$(GREEN)Pronto. Nenhuma credencial sua ficou nesta máquina.$(NC)"
 	@echo "$(BLUE)Os providers baixados (.terraform/) continuam aqui — não são seus$(NC)"
 	@echo "$(BLUE)dados, e poupam o download de quem usar esta máquina depois.$(NC)"
-
-clean: down ## Alias de 'down', mais o cleanup dos recursos do Docker
-	@docker compose down -v --remove-orphans 2>/dev/null || true
 
 # ------------------------------------------------------------------- acesso --
 

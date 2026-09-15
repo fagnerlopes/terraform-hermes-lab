@@ -106,7 +106,11 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   aberta) não aceita chave — é o resgate de quem perder o `tools/`. Se mexer no
   drop-in de sshd, lembre que ele sobrepõe o `ssh_pwauth` do cloud-init.
 - **`make clear` apaga credenciais; `make down` destrói infraestrutura.** São
-  coisas diferentes e os nomes são parecidos — não unifique. O `clear` remove
+  coisas diferentes e os nomes são parecidos — não unifique. Existia também um
+  `make clean` (alias de `down` + cleanup do Docker); foi **removido** porque
+  ficava a uma letra do `clear` e destruía a VM sem perguntar nada. Não
+  reintroduza nenhum alvo cujo nome se pareça com `clear` e que seja
+  destrutivo. O `clear` remove
   `terraform.tfvars`, `terraform.tfstate*`, `CREDENCIAIS.txt`, `tools/` e os
   arquivos de plano, mantendo `.terraform/` (providers não são dados de
   ninguém e o download é caro numa rede de evento). O state entra na lista
