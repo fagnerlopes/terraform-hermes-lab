@@ -92,6 +92,12 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Firewall depois da instância, não depois do IP.** Uma guest network isolada
+  do CloudStack fica em `Allocated` até a primeira VM subir; só então ela é
+  implementada e ganha o roteador virtual que aplica as regras. Regra criada
+  antes disso falha com `errorcode 530, Failed to create firewall rule`. Isso
+  aconteceu de verdade no primeiro apply. Se adicionar portas, mantenha o
+  `depends_on` apontando para o port forward.
 - **Guard de permissão da chave SSH.** O público roda em Windows + WSL. Em
   `/mnt/c` o WSL ignora `chmod`, a chave sai 0777 e o `ssh` a recusa — o
   laboratório morre esperando a VM. O `ensure-key` confere o `stat` depois do

@@ -67,7 +67,14 @@ resource "cloudstack_port_forward" "ssh" {
 
 resource "cloudstack_firewall" "ssh" {
   ip_address_id = cloudstack_ipaddress.lab.id
-  depends_on    = [time_sleep.ip_ready]
+
+  # Must come after the instance: an isolated guest network stays in
+  # "Allocated" state until the first VM is deployed, and only then does it get
+  # the virtual router that applies firewall rules. Creating the rule earlier
+  # fails with errorcode 530, "Failed to create firewall rule". Ordering after
+  # the port forward (which already depends on the instance) keeps the whole
+  # public-IP setup in one predictable sequence.
+  depends_on = [time_sleep.ip_ready, cloudstack_port_forward.ssh]
 
   rule {
     cidr_list = ["0.0.0.0/0"]
