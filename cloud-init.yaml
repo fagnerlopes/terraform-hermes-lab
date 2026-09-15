@@ -71,14 +71,19 @@ write_files:
 
         3. printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=@SEU_ID\n' >> /root/.hermes/.env
            chmod 600 /root/.hermes/.env
-           hermes gateway start
+           hermes gateway restart
+
+      O gateway já sobe com a VM, como serviço de usuário do systemd. Por isso
+      é 'restart' e não 'start': ele precisa reler o .env. Um 'start' com o
+      serviço no ar é recusado pela própria CLI.
 
       Diagnóstico:
 
         hermes --version
-        hermes config get terminal.backend     # deve responder: docker
+        hermes config get terminal.backend      # deve responder: docker
         docker info
-        tail -f /var/log/hermes-lab.log        # log desta instalação
+        systemctl --user list-units | grep -i hermes   # o gateway roda no escopo de USUÁRIO
+        tail -f /var/log/hermes-lab.log         # log desta instalação
 
 runcmd:
   - |
@@ -117,8 +122,11 @@ runcmd:
     /usr/local/bin/hermes config set terminal.container_cpu ${sandbox_cpu}
     /usr/local/bin/hermes config set terminal.container_memory ${sandbox_memory_mb}
 
-    # Installs the systemd unit but does NOT start it: with no bot token in
-    # /root/.hermes/.env there is nothing for the gateway to serve yet.
+    # Installs and starts the gateway as a systemd USER service (note: plain
+    # `systemctl` will not show it; it needs `systemctl --user`). It comes up
+    # even with no bot token in /root/.hermes/.env — there is simply no
+    # Telegram transport to serve until the participant adds one and runs
+    # `hermes gateway restart`.
     /usr/local/bin/hermes gateway install || true
 
     say "4/4 pronto"

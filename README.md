@@ -94,9 +94,22 @@ make up
    Cloud (se estiverem erradas, você descobre em 5 segundos, não no meio do
    provisionamento);
 3. gerar uma chave SSH exclusiva deste laboratório em `tools/`;
-4. criar a VM;
-5. acompanhar a instalação do Hermes, mostrando a fase atual;
-6. imprimir IP, senha e o comando de acesso.
+4. mostrar o que pretende fazer e pedir sua confirmação;
+5. criar a VM;
+6. acompanhar a instalação do Hermes, mostrando a fase atual;
+7. imprimir IP, senha e o comando de acesso.
+
+No passo 4 ele lista cada recurso que será criado, alterado ou destruído. Se
+alguma coisa for ser **destruída** — a sua VM, por exemplo — ele avisa em
+vermelho e exige que você digite `sim` por extenso. É a proteção contra rodar
+`make up` distraído e perder a máquina que você já estava usando.
+
+Para pular o resumo e a confirmação (útil quando você já sabe o que vai
+acontecer):
+
+```bash
+make up-auto
+```
 
 **A instalação leva de 10 a 20 minutos.** O instalador oficial do Hermes monta
 um ambiente Python + Node e baixa o Chromium — é normal demorar. Pode deixar
@@ -145,7 +158,8 @@ final do workshop** — a VM continua sendo cobrada enquanto existir.
 
 | Comando | O que faz |
 |---------|-----------|
-| `make up` | Cria a VM e instala o Hermes (10–20 min) |
+| `make up` | Cria a VM e instala o Hermes (10–20 min), mostrando antes o que será feito |
+| `make up-auto` | O mesmo, sem resumo nem confirmação |
 | `make ssh` | Abre uma sessão SSH na VM |
 | `make credentials` | Mostra IP, senha e comando de acesso |
 | `make status` | Mostra em que fase está a instalação |
@@ -172,8 +186,11 @@ Dentro da VM:
 - **Docker Engine**, usado como *sandbox* das ações de terminal do agente —
   quando o Hermes executa um comando, ele roda dentro de um container com
   limites de CPU e memória, não direto no host;
-- o serviço do gateway **instalado, porém parado**: sem token do Telegram ele
-  não teria o que servir. Nós o ligamos no workshop, se for o caso.
+- o **gateway rodando** como serviço de usuário do systemd (aparece em
+  `systemctl --user`, não em `systemctl`). Ele sobe mesmo sem token do
+  Telegram — apenas não há bot para servir até alguém configurar um. No
+  workshop, quem quiser, acrescenta o token ao `/root/.hermes/.env` e roda
+  `hermes gateway restart`.
 
 Nenhuma porta HTTP é aberta e não há terminal web — o acesso é só por SSH.
 

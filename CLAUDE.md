@@ -92,6 +92,14 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **O gateway roda em escopo de USUÁRIO do systemd.** `systemctl list-units`
+  não o mostra; é preciso `systemctl --user`. Confirmado numa VM real: o
+  `hermes gateway install` do cloud-init instala **e inicia** o serviço, mesmo
+  sem token do Telegram. Por isso a instrução ao participante é `hermes gateway
+  restart` (para reler o `.env`) e não `start`, que a própria CLI recusa quando
+  o serviço está no ar. O `deploy.yml` da receita `hermes-host` do CloudWeaver
+  valida com `systemctl is-active --quiet hermes-gateway`, em escopo de
+  sistema — lá isso só passa pelo fallback `pgrep`.
 - **Nunca declarar `root_disk_size`.** Os planos da Locaweb vêm com disk
   offering fixo (`large` → `d1.large.fixed`, 160 GB). O CloudStack ignora o
   tamanho pedido, cria o da oferta, e o refresh passa a ler um valor diferente

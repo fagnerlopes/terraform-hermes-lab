@@ -1,4 +1,4 @@
-.PHONY: help install setup up down credentials status logs ssh plan output lint fmt fmt-check validate clean ensure-setup ensure-key ensure-init wait-ready
+.PHONY: help install setup up up-auto plan-and-confirm down credentials status logs ssh plan output lint fmt fmt-check validate clean ensure-setup ensure-key ensure-init wait-ready
 
 GREEN := \033[0;32m
 BLUE  := \033[0;34m
@@ -67,14 +67,50 @@ ensure-init:
 
 # --------------------------------------------------------------- lifecycle --
 
-up: ## Cria a VM e instala o Hermes (de 10 a 20 minutos)
+up: ## Cria a VM e instala o Hermes, mostrando antes o que será feito (10-20 min)
 	@$(MAKE) --no-print-directory ensure-setup
 	@$(MAKE) --no-print-directory ensure-key
 	@$(MAKE) --no-print-directory ensure-init
-	@echo "$(BLUE)Provisionando a VM na Locaweb Cloud...$(NC)"
-	@$(TF) apply -auto-approve -input=false
+	@$(MAKE) --no-print-directory plan-and-confirm
+	@echo "$(BLUE)Aplicando...$(NC)"
+	@$(TF) apply -input=false tfplan
+	@rm -f tfplan
 	@$(MAKE) --no-print-directory wait-ready
 	@$(MAKE) --no-print-directory credentials
+
+up-auto: ## Igual ao 'up', sem resumo nem confirmação
+	@$(MAKE) --no-print-directory up AUTO=1
+
+# Saves the plan to a file and applies exactly that file, so what you approve
+# is what runs. Skipped entirely when AUTO is set.
+plan-and-confirm:
+	@echo "$(BLUE)Verificando o que precisa ser feito...$(NC)"
+	@$(TF) plan -input=false -out=tfplan >/dev/null
+	@$(TF) show -json tfplan > .tfplan.json 2>/dev/null
+	@CREATE=$$(jq -r '[.resource_changes[]? | select(.change.actions|index("create")) | .address] | join(" ")' .tfplan.json); \
+	DELETE=$$(jq -r '[.resource_changes[]? | select(.change.actions|index("delete")) | .address] | join(" ")' .tfplan.json); \
+	UPDATE=$$(jq -r '[.resource_changes[]? | select(.change.actions == ["update"]) | .address] | join(" ")' .tfplan.json); \
+	rm -f .tfplan.json; \
+	if [ -z "$$CREATE" ] && [ -z "$$DELETE" ] && [ -z "$$UPDATE" ]; then \
+		echo "$(GREEN)Nada a mudar — sua infraestrutura já está como deveria.$(NC)"; \
+	else \
+		echo ""; \
+		[ -n "$$CREATE" ] && { echo "$(GREEN)Vai criar:$(NC)";  for r in $$CREATE; do echo "  + $$r"; done; }; \
+		[ -n "$$UPDATE" ] && { echo "$(BLUE)Vai alterar:$(NC)"; for r in $$UPDATE; do echo "  ~ $$r"; done; }; \
+		[ -n "$$DELETE" ] && { echo "$(RED)Vai DESTRUIR:$(NC)";  for r in $$DELETE; do echo "  - $$r"; done; }; \
+		echo ""; \
+		if [ -n "$(AUTO)" ]; then \
+			echo "$(YELLOW)AUTO ligado — seguindo sem confirmação.$(NC)"; \
+		elif [ -n "$$DELETE" ]; then \
+			echo "$(RED)Atenção: isso apaga recursos que já existem.$(NC)"; \
+			echo "$(RED)Se a VM está na lista, você perde o que estiver dentro dela.$(NC)"; \
+			printf "Digite 'sim' para confirmar: "; read ans; \
+			if [ "$$ans" != "sim" ]; then rm -f tfplan; echo "$(YELLOW)Cancelado. Nada foi alterado.$(NC)"; exit 1; fi; \
+		else \
+			printf "Continuar? (s/N) "; read ans; \
+			case "$$ans" in [sS]*) ;; *) rm -f tfplan; echo "$(YELLOW)Cancelado. Nada foi alterado.$(NC)"; exit 1 ;; esac; \
+		fi; \
+	fi
 
 wait-ready:
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
