@@ -12,13 +12,33 @@ aqui: fazemos isso juntos, ao vivo, no workshop.
 
 Você precisa de:
 
-1. **Uma conta na Locaweb Cloud** com chaves de API. Como gerar:
+1. **Sua conta no Locaweb Cloud, ativada com o cupom do TDC.**
+
+   Contrate em <https://www.locaweb.com.br/locaweb-cloud/> e aplique o cupom
+   que o time do TDC enviou para você. Ele foi gerado para este workshop e
+   cobre os recursos de computação que vamos usar aqui — **e mais 30 dias
+   depois do evento**.
+
+   Esses 30 dias são o melhor da história: o agente que você vai construir hoje
+   não morre quando a palestra acabar. Ele continua rodando, na sua conta, na
+   sua infraestrutura, para você continuar mexendo, quebrando e refazendo com
+   calma. É tempo para experimentar o Locaweb Cloud de verdade, com uma coisa
+   sua rodando em cima dele.
+
+   O Locaweb Cloud é pós-pago: você paga pelo que usar, e o cupom cobre esse
+   consumo durante o período. Terminado ele, o que continuar de pé volta a ser
+   cobrado normalmente — veja [Ao terminar](#ao-terminar) para desligar quando
+   quiser.
+
+   Não recebeu o cupom? Procure o time do TDC antes de seguir.
+
+2. **As chaves de API da sua conta.** Como gerar:
    - acesse <https://painel-cloud.locaweb.com.br>
    - clique no seu nome (canto superior direito) → **Perfil**
    - clique em **Gerar novas chaves API/Secretas**
    - deixe a aba aberta — você vai colar as duas chaves daqui a pouco
 
-2. **Linux, WSL (Windows) ou macOS** com estes programas instalados:
+3. **Linux, WSL (Windows) ou macOS** com estes programas instalados:
 
    ```bash
    sudo apt-get update
@@ -32,7 +52,7 @@ Você precisa de:
    O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
    estiver faltando.
 
-3. **Uma chave de API de um provedor de LLM** e **uma conta no GitHub**. Não
+4. **Uma chave de API de um provedor de LLM** e **uma conta no GitHub**. Não
    entram no Terraform e não são pedidas pelo `make up`: você as informa dentro
    da VM, no `hermes setup`, que é o primeiro passo do workshop. Deixe as duas
    à mão antes de começar — é o único pré-requisito que o laboratório não
@@ -161,20 +181,31 @@ O primeiro é:
 hermes setup
 ```
 
-É aqui que entram a **chave de LLM** e a **conta do GitHub** do item 3 dos
+É aqui que entram a **chave de LLM** e a **conta do GitHub** do item 4 dos
 pré-requisitos. Daí em diante, seguimos juntos no workshop.
 
 ---
 
 ## Ao terminar
 
+**Não desligue nada quando a palestra acabar.** O cupom do TDC cobre os 30 dias
+seguintes, e o laboratório é seu nesse período: deixe o agente de pé, volte nele
+durante a semana, quebre, refaça, instale o que quiser. Foi para isso que o
+cupom existe.
+
+Quando você tiver terminado de experimentar — ou perto de encerrar o período do
+cupom:
+
 ```bash
 make down
 ```
 
 Destrói a VM, a rede e o IP público, e apaga a chave SSH local junto com o
-`CREDENCIAIS.txt`. **Rode isso ao final do workshop** — a VM continua sendo
-cobrada enquanto existir.
+`CREDENCIAIS.txt`.
+
+Depois que o período do cupom terminar, o que continuar existindo passa a ser
+cobrado na sua conta. Se você quiser seguir com o agente no ar além disso,
+ótimo — só vale saber que a partir dali a conta é sua.
 
 ### Limpando suas credenciais da máquina
 
@@ -261,8 +292,12 @@ Ele imprime o comando de instalação de cada um. Instale e rode de novo.
 
 ## Custo
 
-A VM fica sendo cobrada enquanto existir. `make down` encerra a cobrança.
-Não esqueça dele ao final do workshop.
+O Locaweb Cloud é pós-pago e a VM gera consumo enquanto existir — mas durante o
+workshop e nos 30 dias seguintes esse consumo está coberto pelo cupom do TDC.
+Use à vontade nesse período.
+
+Terminado o cupom, o consumo passa a ser cobrado na sua conta. `make down`
+encerra: ele destrói a VM, a rede e o IP público.
 
 ---
 

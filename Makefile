@@ -164,7 +164,7 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 		echo "$(YELLOW)Sem dados ainda. Rode 'make up' primeiro.$(NC)"; exit 0; \
 	fi; \
 	umask 077; \
-	echo "$$CREDS" | jq -r '"Laboratório Hermes — TDC São Paulo", "==================================", "", "IP público: " + .ip, "Usuário:    " + .usuario, "Senha:      " + .senha, "", "Entrar por SSH (use sempre este caminho):", "  " + .ssh, "", "A senha NÃO funciona por SSH — o acesso remoto é só por chave.", "Ela serve no console web do painel, caso você perca a chave:", "  https://painel-cloud.locaweb.com.br", "", "Ao terminar o workshop, destrua o laboratório para não ser cobrado:", "  make down", "", "Guarde este arquivo antes de ir embora: ele não é recuperável", "depois que a VM for destruída."' > $(CREDS_FILE); \
+	echo "$$CREDS" | jq -r '"Laboratório Hermes — TDC São Paulo", "==================================", "", "IP público: " + .ip, "Usuário:    " + .usuario, "Senha:      " + .senha, "", "Entrar por SSH (use sempre este caminho):", "  " + .ssh, "", "A senha NÃO funciona por SSH — o acesso remoto é só por chave.", "Ela serve no console web do painel, caso você perca a chave:", "  https://painel-cloud.locaweb.com.br", "", "O cupom do TDC cobre este laboratório durante o evento e por 30 dias.", "Aproveite. Quando terminar de experimentar, desligue com:", "  make down", "", "Guarde este arquivo antes de ir embora: ele não é recuperável", "depois que a VM for destruída."' > $(CREDS_FILE); \
 	chmod 600 $(CREDS_FILE); \
 	echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
 	echo "$(BLUE)  Seu laboratório Hermes$(NC)"; \
