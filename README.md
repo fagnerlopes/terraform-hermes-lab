@@ -184,6 +184,12 @@ hermes setup
 É aqui que entram a **chave de LLM** e a **conta do GitHub** do item 4 dos
 pré-requisitos. Daí em diante, seguimos juntos no workshop.
 
+> Ao terminar, o `hermes setup` sugere na tela o comando `hermes gateway`. Se
+> você rodar, aparece um erro em vermelho: *a gateway is already running under
+> systemd (user)*. **Não é problema.** O gateway já sobe junto com a VM, e a
+> CLI está apenas impedindo que um segundo suba por cima. Para ver o estado,
+> `hermes gateway status`.
+
 ---
 
 ## Ao terminar

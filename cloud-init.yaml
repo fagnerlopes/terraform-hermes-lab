@@ -83,13 +83,21 @@ write_files:
            chmod 600 /root/.hermes/.env
            hermes gateway restart
 
-      O gateway já sobe com a VM, como serviço de usuário do systemd. Por isso
-      é 'restart' e não 'start': ele precisa reler o .env. Um 'start' com o
-      serviço no ar é recusado pela própria CLI.
+      O gateway JÁ ESTÁ RODANDO desde que a VM subiu, como serviço de usuário
+      do systemd. Por isso é 'restart': ele precisa reler o .env.
+
+      Atenção: ao terminar, o 'hermes setup' sugere na tela o comando
+      'hermes gateway'. Se você rodar, vai ver um erro em vermelho dizendo
+      'a gateway is already running under systemd (user)'. Não é problema
+      nenhum — é a CLI impedindo que suba um segundo gateway por cima do
+      que já existe. Use 'hermes gateway status' para ver o estado e
+      'hermes gateway restart' para reiniciar.
 
       Diagnóstico:
 
         hermes --version
+        hermes gateway status                   # estado do gateway
+        hermes logs                             # logs do agente
         hermes config get terminal.backend      # deve responder: docker
         docker info
         systemctl --user list-units | grep -i hermes   # o gateway roda no escopo de USUÁRIO
