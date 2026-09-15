@@ -111,6 +111,13 @@ acontecer):
 make up-auto
 ```
 
+> **Reaproveitou um IP?** Se você já tinha destruído um laboratório antes, a
+> Locaweb pode devolver o mesmo IP para a VM nova, e o seu `~/.ssh/known_hosts`
+> ainda guarda a chave da máquina antiga — o `ssh` recusa com
+> `REMOTE HOST IDENTIFICATION HAS CHANGED`. O `make ssh` não sofre disso. Se
+> usar o `ssh` na mão e bater nesse erro:
+> `ssh-keygen -f ~/.ssh/known_hosts -R <IP>`
+
 **A instalação leva de 10 a 20 minutos.** O instalador oficial do Hermes monta
 um ambiente Python + Node e baixa o Chromium — é normal demorar. Pode deixar
 rodando e ir tomar um café.

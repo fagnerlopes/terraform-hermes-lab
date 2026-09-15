@@ -180,7 +180,7 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 ssh: ## Abre uma sessão SSH na VM
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	ssh -i $(KEY) $(SSH_OPTS) root@$$IP
+	ssh -i $(KEY) $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
 
 status: ## Mostra em que fase está a instalação
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
@@ -190,7 +190,7 @@ status: ## Mostra em que fase está a instalação
 logs: ## Acompanha o log da instalação na VM
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	ssh -i $(KEY) $(SSH_OPTS) root@$$IP 'tail -f -n 200 /var/log/hermes-lab.log'
+	ssh -i $(KEY) $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure 'tail -f -n 200 /var/log/hermes-lab.log'
 
 # ----------------------------------------------------------------- terraform -
 

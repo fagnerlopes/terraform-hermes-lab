@@ -92,6 +92,13 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Todo comando SSH publicado leva `UserKnownHostsFile=/dev/null`.** A Locaweb
+  recicla IPs: destruir e recriar o lab costuma devolver o mesmo endereço com
+  outra host key, e aí o `known_hosts` do participante faz o `ssh` recusar com
+  `REMOTE HOST IDENTIFICATION HAS CHANGED`. `StrictHostKeyChecking=no` não
+  cobre esse caso — ele só aceita chave nova, não chave alterada. Observado na
+  prática. Vale para o `SSH_OPTS` do Makefile e para o comando gravado no
+  output `credentials`, que vai parar no CREDENCIAIS.txt.
 - **Senha existe, mas não vale por SSH.** `ssh_pwauth: false` e
   `PermitRootLogin prohibit-password`: a porta 22 fica aberta para a internet e
   senha ali é superfície de força bruta. A senha do `random_password.root`
