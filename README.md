@@ -32,6 +32,12 @@ Você precisa de:
    O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
    estiver faltando.
 
+3. **Uma chave de API de um provedor de LLM** e **uma conta no GitHub**. Não
+   entram no Terraform e não são pedidas pelo `make up`: você as informa dentro
+   da VM, no `hermes setup`, que é o primeiro passo do workshop. Deixe as duas
+   à mão antes de começar — é o único pré-requisito que o laboratório não
+   consegue verificar para você, e sem ele o agente não funciona.
+
 ### Se você está no Windows com WSL
 
 Duas armadilhas, as duas fáceis de evitar:
@@ -155,7 +161,8 @@ O primeiro é:
 hermes setup
 ```
 
-Daí em diante, seguimos juntos no workshop.
+É aqui que entram a **chave de LLM** e a **conta do GitHub** do item 3 dos
+pré-requisitos. Daí em diante, seguimos juntos no workshop.
 
 ---
 
