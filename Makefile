@@ -12,7 +12,11 @@ TF := docker compose run --rm -T terraform
 
 KEY        := tools/hermes_lab_key
 CREDS_FILE := CREDENCIAIS.txt
-SSH_OPTS := -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=8 -o LogLevel=ERROR
+# IdentitiesOnly=yes is not optional: -i only ADDS a key to the list, so a
+# machine with several keys in ssh-agent offers them all first and the server
+# drops the connection at MaxAuthTries ("Too many authentication failures")
+# before ever reaching ours.
+SSH_OPTS := -i $(KEY) -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=8 -o LogLevel=ERROR
 
 help: ## Mostra os comandos disponíveis
 	@echo "$(BLUE)Laboratório Hermes — TDC São Paulo$(NC)"
@@ -117,7 +121,7 @@ wait-ready:
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(RED)Não consegui obter o IP. Rode 'make output'.$(NC)"; exit 1; fi; \
 	echo ""; \
-	INITIAL=$$(ssh -i $(KEY) $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
+	INITIAL=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
 	if [ "$$INITIAL" = "4/4 pronto" ]; then \
 		echo "$(GREEN)A VM em $$IP já está no ar, com o Hermes instalado.$(NC)"; \
 		echo "$(GREEN)Nada foi recriado — nenhuma espera necessária.$(NC)"; \
@@ -128,7 +132,7 @@ wait-ready:
 	echo ""; \
 	DONE=0; \
 	for i in $$(seq 1 300); do \
-		STATUS=$$(ssh -i $(KEY) $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
+		STATUS=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
 		[ -z "$$STATUS" ] && STATUS="aguardando a VM responder ao SSH"; \
 		case "$$STATUS" in \
 			ERRO*) echo ""; echo "$(RED)$$STATUS$(NC)"; \
@@ -210,17 +214,17 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 ssh: ## Abre uma sessão SSH na VM
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	ssh -i $(KEY) $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
+	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
 
 status: ## Mostra em que fase está a instalação
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	echo "$(BLUE)Fase:$(NC) $$(ssh -i $(KEY) $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null || echo 'sem resposta no SSH')"
+	echo "$(BLUE)Fase:$(NC) $$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null || echo 'sem resposta no SSH')"
 
 logs: ## Acompanha o log da instalação na VM
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	ssh -i $(KEY) $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure 'tail -f -n 200 /var/log/hermes-lab.log'
+	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure 'tail -f -n 200 /var/log/hermes-lab.log'
 
 # ----------------------------------------------------------------- terraform -
 

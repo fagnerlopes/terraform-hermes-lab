@@ -92,6 +92,13 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   `nip.io` não está na Public Suffix List, então todos os certificados
   `*.nip.io` do mundo dividem o limite de 50/semana do Let's Encrypt — apostar
   um workshop nisso é temerário.
+- **Todo comando SSH leva `IdentitiesOnly=yes`.** O `-i` não restringe as
+  chaves oferecidas, apenas acrescenta uma à lista: numa máquina com várias
+  chaves no `ssh-agent`, o cliente oferece todas antes da nossa, o servidor
+  corta em `MaxAuthTries` e a conexão morre com "Too many authentication
+  failures". Aconteceu de verdade. O `-i` mora dentro do `SSH_OPTS` para que
+  nenhum alvo novo esqueça — e o mesmo vale para o comando gravado no
+  CREDENCIAIS.txt, via output `credentials`.
 - **Todo comando SSH publicado leva `UserKnownHostsFile=/dev/null`.** A Locaweb
   recicla IPs: destruir e recriar o lab costuma devolver o mesmo endereço com
   outra host key, e aí o `known_hosts` do participante faz o `ssh` recusar com
