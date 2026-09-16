@@ -1,4 +1,4 @@
-.PHONY: help install setup up up-auto plan-and-confirm down clear credentials status logs ssh plan output lint fmt fmt-check validate ensure-setup ensure-key ensure-init wait-ready
+.PHONY: help install setup up up-auto plan-and-confirm down clear credentials status logs ssh plan output lint fmt fmt-check validate ensure-setup ensure-key ensure-key-usable require-key key-rescue-hint ensure-init wait-ready
 
 GREEN := \033[0;32m
 BLUE  := \033[0;34m
@@ -62,6 +62,55 @@ ensure-key:
 		exit 1; \
 	fi
 
+# Printed whenever the private key is gone while the lab is still up. Losing it
+# is not recoverable from here: CloudStack only reads the keypair when the
+# instance is created, so replacing it leaves the running VM's authorized_keys
+# exactly as it was. Confirmed on a real lab — the plan updates the keypair and
+# touches nothing inside the VM.
+key-rescue-hint:
+	@echo "$(YELLOW)Gerar outra chave não resolve sozinho: a VM só lê o keypair$(NC)"
+	@echo "$(YELLOW)quando é criada, então a chave nova não entra no authorized_keys$(NC)"
+	@echo "$(YELLOW)de uma VM que já está rodando.$(NC)"
+	@echo ""
+	@echo "$(BLUE)Caminho 1 — resgatar pelo console web (mantém a VM e o Hermes):$(NC)"
+	@echo "  1. make ensure-key          (gera um par novo em tools/)"
+	@echo "  2. cat $(KEY).pub  (copie a linha inteira)"
+	@echo "  3. Abra https://painel-cloud.locaweb.com.br, console da VM,"
+	@echo "     entre como root com a senha do $(CREDS_FILE)"
+	@echo "  4. Na VM:  mkdir -p /root/.ssh && echo 'COLE_AQUI' >> /root/.ssh/authorized_keys"
+	@echo ""
+	@echo "$(BLUE)Caminho 2 — recomeçar do zero (10 a 20 minutos):$(NC)"
+	@echo "  make down && make up"
+	@echo ""
+
+# Guard for `up`: a missing key plus a VM already in the state means the key was
+# lost after the lab went up. Generating a new one and applying does not get you
+# back in, and `up` would then spend 25 minutes in wait-ready waiting for an SSH
+# that can never authenticate. Stop before any of that.
+ensure-key-usable:
+	@if [ ! -f $(KEY) ] && [ -f terraform.tfstate ] && grep -q '"type": "cloudstack_instance"' terraform.tfstate; then \
+		echo ""; \
+		echo "$(RED)Sua chave SSH sumiu, mas o laboratório continua no ar.$(NC)"; \
+		echo "$(RED)Seguir com o 'make up' não devolveria o acesso.$(NC)"; \
+		echo ""; \
+		$(MAKE) --no-print-directory key-rescue-hint; \
+		exit 1; \
+	fi
+
+# Guard for the access targets. Without it ssh fails as
+# "Permission denied (publickey)": -i only adds the key to the list and
+# IdentitiesOnly=yes then restricts the offer to it, so a missing file means no
+# key is offered at all — and the message says nothing about the real cause.
+require-key:
+	@if [ ! -f $(KEY) ]; then \
+		echo ""; \
+		echo "$(RED)A chave SSH do laboratório não está aqui ($(KEY)).$(NC)"; \
+		echo "$(RED)Sem ela não há SSH: a senha de root não vale na porta 22.$(NC)"; \
+		echo ""; \
+		$(MAKE) --no-print-directory key-rescue-hint; \
+		exit 1; \
+	fi
+
 ensure-init:
 	@if [ ! -d .terraform ]; then \
 		echo "$(BLUE)Construindo a imagem do Terraform...$(NC)"; \
@@ -74,6 +123,7 @@ ensure-init:
 
 up: ## Cria a VM e instala o Hermes, mostrando antes o que será feito (10-20 min)
 	@$(MAKE) --no-print-directory ensure-setup
+	@$(MAKE) --no-print-directory ensure-key-usable
 	@$(MAKE) --no-print-directory ensure-key
 	@$(MAKE) --no-print-directory ensure-init
 	@$(MAKE) --no-print-directory plan-and-confirm
@@ -212,16 +262,19 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 	echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 
 ssh: ## Abre uma sessão SSH na VM
+	@$(MAKE) --no-print-directory require-key
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
 
 status: ## Mostra em que fase está a instalação
+	@$(MAKE) --no-print-directory require-key
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	echo "$(BLUE)Fase:$(NC) $$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null || echo 'sem resposta no SSH')"
 
 logs: ## Acompanha o log da instalação na VM
+	@$(MAKE) --no-print-directory require-key
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP 'tail -f -n 200 /var/log/hermes-lab.log' || true   # Ctrl-C on the tail is not a make failure

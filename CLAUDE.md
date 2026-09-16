@@ -112,6 +112,17 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   continua sendo definida porque o console web do painel (fora da internet
   aberta) não aceita chave — é o resgate de quem perder o `tools/`. Se mexer no
   drop-in de sshd, lembre que ele sobrepõe o `ssh_pwauth` do cloud-init.
+- **Chave SSH perdida com a VM no ar é caso sem volta pelo Terraform.** O
+  CloudStack só lê o keypair no momento em que a instância é criada: trocar o
+  `cloudstack_ssh_keypair` depois disso replaca o objeto na API e não encosta
+  no `authorized_keys` da VM que já roda (o plano mostra `keypair` replaced e
+  a instância só com `user_data` in-place). Por isso `up` tem o guard
+  `ensure-key-usable` — sem ele o `make up` geraria chave nova e ficaria 25
+  minutos no `wait-ready` esperando um SSH que nunca autentica — e `ssh`,
+  `status` e `logs` passam por `require-key`, que explica o resgate (console
+  web do painel com a senha do `CREDENCIAIS.txt`) em vez de deixar o ssh
+  responder só `Permission denied (publickey)`. O `-i` com
+  `IdentitiesOnly=yes` não oferece chave nenhuma quando o arquivo não existe.
 - **`make clear` apaga credenciais; `make down` destrói infraestrutura.** São
   coisas diferentes e os nomes são parecidos — não unifique. Existia também um
   `make clean` (alias de `down` + cleanup do Docker); foi **removido** porque
