@@ -224,7 +224,7 @@ status: ## Mostra em que fase está a instalação
 logs: ## Acompanha o log da instalação na VM
 	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
-	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure 'tail -f -n 200 /var/log/hermes-lab.log'
+	ssh $(SSH_OPTS) root@$$IP 'tail -f -n 200 /var/log/hermes-lab.log' || true   # Ctrl-C on the tail is not a make failure
 
 # ----------------------------------------------------------------- terraform -
 
