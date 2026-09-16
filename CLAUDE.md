@@ -123,6 +123,9 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   web do painel com a senha do `CREDENCIAIS.txt`) em vez de deixar o ssh
   responder só `Permission denied (publickey)`. O `-i` com
   `IdentitiesOnly=yes` não oferece chave nenhuma quando o arquivo não existe.
+  Corolário para quem mexe aqui: `tools/` é credencial viva, não artefato de
+  teste, e é gitignored — apagá-lo não limpa nada no `git status` e tranca o
+  dono da VM do lado de fora. Já aconteceu, com o laboratório no ar.
 - **`make clear` apaga credenciais; `make down` destrói infraestrutura.** São
   coisas diferentes e os nomes são parecidos — não unifique. Existia também um
   `make clean` (alias de `down` + cleanup do Docker); foi **removido** porque
