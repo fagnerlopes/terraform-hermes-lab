@@ -144,9 +144,10 @@ make up-auto
 > usar o `ssh` na mão e bater nesse erro:
 > `ssh-keygen -f ~/.ssh/known_hosts -R <IP>`
 
-**A instalação leva de 10 a 20 minutos.** O instalador oficial do Hermes monta
-um ambiente Python + Node e baixa o Chromium — é normal demorar. Pode deixar
-rodando e ir tomar um café.
+**A instalação leva de 15 a 25 minutos.** O instalador oficial do Hermes monta
+um ambiente Python + Node e baixa o Chromium, e logo depois a VM ainda pré-baixa
+as dependências do Cofounder — é normal demorar. Pode deixar rodando e ir tomar
+um café.
 
 Se a sua conexão cair no meio, nada se perde: rode `make status` para ver em
 que fase está, ou `make logs` para acompanhar o log dentro da VM.
@@ -189,6 +190,23 @@ pré-requisitos. Daí em diante, seguimos juntos no workshop.
 > systemd (user)*. **Não é problema.** O gateway já sobe junto com a VM, e a
 > CLI está apenas impedindo que um segundo suba por cima. Para ver o estado,
 > `hermes gateway status`.
+
+---
+
+## Cofounder
+
+A VM já vem com tudo o que o instalador do Cofounder baixaria na hora: o
+`podman`, o `mise`, o `gh`, os toolchains do Node e as bibliotecas de sistema do
+Chromium. O instalador reconhece cada um deles e pula direto para a configuração
+do projeto, em segundos.
+
+Rode-o **de dentro da pasta do projeto**. Em `$HOME` ele instala só as
+ferramentas — que já estão aqui — e não configura projeto nenhum:
+
+```bash
+mkdir -p ~/meu-app && cd ~/meu-app
+/bin/bash -c "$(curl -fsSL https://cofounder.locaweb.com.br/install.sh)"
+```
 
 ---
 

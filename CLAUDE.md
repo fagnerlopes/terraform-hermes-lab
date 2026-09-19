@@ -45,8 +45,11 @@ Três fontes, que valem consulta antes de mudar qualquer coisa:
   `cloud-init.yaml` daqui é aquele pipeline traduzido para cloud-init.
 - **`~/workspaces/workspace-locaweb/repositories/vps-recipes`** — receitas
   cloud-init do produto VPS, incluindo uma de Hermes Agent em Docker.
+- **`https://cofounder.locaweb.com.br/install.sh`** — o instalador do
+  Cofounder. A fase `4/5` do cloud-init espelha a metade "máquina" dele.
 
-Quando a receita do CloudWeaver mudar, este repo **não** acompanha sozinho.
+Quando a receita do CloudWeaver ou o instalador do Cofounder mudarem, este repo
+**não** acompanha sozinho.
 
 ### Um cenário só
 
@@ -174,6 +177,19 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
 - **`.gitattributes` forçando LF.** Clone feito com Git do Windows
   (`core.autocrlf` ligado por padrão) converteria os scripts para CRLF, e um
   `.sh` com CRLF falha como `bad interpreter: /usr/bin/env^M`.
+- **A fase `4/5` espelha o instalador do Cofounder, e nunca é fatal.** Ela
+  pré-instala `podman`, `mise`, `gh`, os toolchains `node@lts`/`node@24` e as
+  bibliotecas do Chromium nos mesmos alvos que o `install.sh` usa, para cair nas
+  guardas de idempotência dele (`have podman`, o canário `libnspr4`/`libnss3` no
+  `ldconfig`, a linha de PATH no `~/.bashrc` — que é comparada com `grep -qsxF`,
+  então precisa bater byte a byte, ou o instalador acrescenta uma segunda). Todo
+  passo termina em `|| warn`, nunca em `fail`: o Cofounder é acelerador, o
+  laboratório é o Hermes, e um repo do `gh` fora do ar no meio do evento não
+  pode impedir a VM de chegar em `5/5 pronto`. O bloco exporta `HOME=/root`
+  explicitamente — o cloud-init não garante `HOME`, e tanto o `mise.run` quanto
+  a linha de PATH resolvem o destino a partir dele. E `podman`, nunca
+  `podman-docker`: esse pacote instala um shim em `/var/run/docker.sock` que
+  brigaria com o Docker Engine do sandbox do Hermes.
 - **`-T` em todo `docker compose run`.** Sem isso a saída vem com `\r` e as
   comparações de shell no Makefile quebram silenciosamente.
 
@@ -181,7 +197,7 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
 
 `cloud-init.yaml` escreve a fase atual em `/var/lib/hermes-lab/status` e expõe
 `/usr/local/bin/hermes-lab-status`. `make up`, `make status` e `make logs`
-dependem desses dois caminhos e das strings de fase (`"4/4 pronto"`, prefixo
+dependem desses dois caminhos e das strings de fase (`"5/5 pronto"`, prefixo
 `"ERRO"`). Mudou a fase, mude o Makefile junto.
 
 O output `credentials` é objeto único consumido via `jq` pelo Makefile — mudar

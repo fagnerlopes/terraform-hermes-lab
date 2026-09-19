@@ -172,25 +172,25 @@ wait-ready:
 	if [ -z "$$IP" ]; then echo "$(RED)Não consegui obter o IP. Rode 'make output'.$(NC)"; exit 1; fi; \
 	echo ""; \
 	INITIAL=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
-	if [ "$$INITIAL" = "4/4 pronto" ]; then \
+	if [ "$$INITIAL" = "5/5 pronto" ]; then \
 		echo "$(GREEN)A VM em $$IP já está no ar, com o Hermes instalado.$(NC)"; \
 		echo "$(GREEN)Nada foi recriado — nenhuma espera necessária.$(NC)"; \
 		exit 0; \
 	fi; \
-	echo "$(BLUE)VM em $$IP. Instalando o Hermes Agent — isso leva de 10 a 20 minutos.$(NC)"; \
+	echo "$(BLUE)VM em $$IP. Instalando o Hermes Agent — isso leva de 15 a 25 minutos.$(NC)"; \
 	echo "$(YELLOW)Pode deixar rodando; o progresso aparece abaixo.$(NC)"; \
 	echo ""; \
 	DONE=0; \
-	for i in $$(seq 1 300); do \
+	for i in $$(seq 1 360); do \
 		STATUS=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
 		[ -z "$$STATUS" ] && STATUS="aguardando a VM responder ao SSH"; \
 		case "$$STATUS" in \
 			ERRO*) echo ""; echo "$(RED)$$STATUS$(NC)"; \
 				echo "$(YELLOW)Veja o log completo com: make logs$(NC)"; exit 1 ;; \
-			"4/4 pronto") DONE=1 ;; \
+			"5/5 pronto") DONE=1 ;; \
 		esac; \
 		[ $$DONE -eq 1 ] && break; \
-		printf "  $(YELLOW)[%3d/300]$(NC) %-55s\r" $$i "$$STATUS"; \
+		printf "  $(YELLOW)[%3d/360]$(NC) %-55s\r" $$i "$$STATUS"; \
 		sleep 5; \
 	done; \
 	printf "%-75s\r" " "; \

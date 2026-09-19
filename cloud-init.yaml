@@ -86,6 +86,20 @@ write_files:
       O gateway JÁ ESTÁ RODANDO desde que a VM subiu, como serviço de usuário
       do systemd. Por isso é 'restart': ele precisa reler o .env.
 
+      Cofounder
+      ---------
+
+      Esta VM já vem com tudo o que o instalador do Cofounder baixa: podman,
+      mise, gh, os toolchains do Node e as bibliotecas do Chromium. Quando
+      você rodar o instalador, ele vai reconhecer cada um e pular direto para
+      a configuração do projeto — questão de segundos, não de minutos.
+
+      Rode SEMPRE de dentro da pasta do projeto. Em $HOME ele instala só as
+      ferramentas (que já estão aqui) e não configura projeto nenhum:
+
+        mkdir -p ~/meu-app && cd ~/meu-app
+        /bin/bash -c "$(curl -fsSL https://cofounder.locaweb.com.br/install.sh)"
+
       Atenção: ao terminar, o 'hermes setup' sugere na tela o comando
       'hermes gateway'. Se você rodar, vai ver um erro em vermelho dizendo
       'a gateway is already running under systemd (user)'. Não é problema
@@ -116,7 +130,7 @@ runcmd:
     # 1) Docker Engine from the official repo. NOT the snap and NOT docker.io:
     #    the snap build breaks the --init / no-new-privileges flags that the
     #    Hermes terminal sandbox relies on.
-    say "1/4 instalando Docker"
+    say "1/5 instalando Docker"
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc || fail "download da chave GPG do Docker"
     chmod a+r /etc/apt/keyrings/docker.asc
@@ -129,13 +143,13 @@ runcmd:
     #    Python + Node environment and downloads Playwright/Chromium.
     #    --skip-setup/--non-interactive because there is no TTY in cloud-init;
     #    the wizard is the participant's job, live.
-    say "2/4 instalando Hermes Agent (leva de 5 a 15 minutos)"
+    say "2/5 instalando Hermes Agent (leva de 5 a 15 minutos)"
     curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
       | bash -s -- --skip-setup --non-interactive --skip-computer-use --no-skills \
       || fail "instalação do Hermes Agent"
 
     # 3) Confine the agent's terminal/execute_code/file actions to a container.
-    say "3/4 configurando o sandbox do terminal"
+    say "3/5 configurando o sandbox do terminal"
     /usr/local/bin/hermes config set terminal.backend docker || fail "hermes config set terminal.backend"
     /usr/local/bin/hermes config set terminal.container_cpu ${sandbox_cpu}
     /usr/local/bin/hermes config set terminal.container_memory ${sandbox_memory_mb}
@@ -147,5 +161,59 @@ runcmd:
     # `hermes gateway restart`.
     /usr/local/bin/hermes gateway install || true
 
-    say "4/4 pronto"
+    # 4) Warm up what the Cofounder installer would otherwise download live, in
+    #    front of the room. This block mirrors the machine-level half of
+    #    https://cofounder.locaweb.com.br/install.sh — same tools, same targets —
+    #    so its idempotency guards (`have podman`, the libnspr4/libnss3 canary in
+    #    ldconfig, ...) all hit and the participant's run skips straight to the
+    #    per-project `npx skills add`.
+    #
+    #    Nothing here is fatal: the Cofounder is an accelerator, the lab is
+    #    Hermes. If the GitHub CLI repo is down during the event, the VM must
+    #    still reach "5/5 pronto".
+    say "4/5 preparando as dependências do Cofounder"
+    warn() { echo "AVISO: $1 falhou — o install.sh do Cofounder refaz esta parte"; }
+
+    # cloud-init does not guarantee HOME, and both mise.run and the PATH line
+    # below resolve their target from it.
+    export HOME=/root
+    export DEBIAN_FRONTEND=noninteractive
+
+    # podman. Deliberately NOT podman-docker: that package ships a
+    # /var/run/docker.sock shim that would fight the Docker Engine the Hermes
+    # terminal sandbox runs on.
+    apt-get install -y -qq podman || warn "instalação do podman"
+
+    # gh, from the GitHub CLI apt repo — the same source the installer uses.
+    install -m 0755 -d /etc/apt/keyrings
+    if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli-archive-keyring.gpg; then
+      chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+      apt-get update -qq && apt-get install -y -qq gh || warn "instalação do gh"
+    else
+      warn "download da chave GPG do GitHub CLI"
+    fi
+
+    # mise, into /root/.local/bin. mise.run only prints PATH instructions, so we
+    # persist the export ourselves — byte for byte the line the installer greps
+    # for, or it would append a second copy.
+    if [ ! -x /root/.local/bin/mise ]; then
+      curl -fsSL https://mise.run | sh || warn "instalação do mise"
+    fi
+    PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+    touch /root/.bashrc
+    grep -qsxF "$PATH_LINE" /root/.bashrc || echo "$PATH_LINE" >> /root/.bashrc
+    export PATH="/root/.local/bin:$PATH"
+
+    # The heavy download the participant will no longer wait for. Both versions:
+    # the installer asks for node@24 for Playwright and node@lts for the skills.
+    mise install node@lts node@24 || warn "download dos toolchains node pelo mise"
+
+    # System libraries for headless Chromium. Delegated to Playwright's own
+    # install-deps so the package list tracks the distro (Ubuntu 24.04+ uses the
+    # t64-suffixed names). Version pinned to match the installer.
+    mise x node@24 -- npx --yes playwright@1.50.1 install-deps chromium \
+      || warn "dependências de sistema do Chromium"
+
+    say "5/5 pronto"
     touch /var/lib/hermes-lab/ready
