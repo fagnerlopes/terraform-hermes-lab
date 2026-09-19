@@ -51,11 +51,29 @@ Você precisa de:
    O `make up` confere tudo isso antes de qualquer coisa e diz exatamente o que
    estiver faltando.
 
-4. **Uma chave de API de um provedor de LLM** e **uma conta no GitHub**. Não
-   entram no Terraform e não são pedidas pelo `make up`: você as informa dentro
-   da VM, no `hermes setup`, que é o primeiro passo do workshop. Deixe as duas
+4. **Uma chave de API de um provedor de LLM** e **um token do GitHub**. Não
+   entram no Terraform e não são pedidos pelo `make up`: você os informa dentro
+   da VM, no `hermes setup`, que é o primeiro passo do workshop. Deixe os dois
    à mão antes de começar — é o único pré-requisito que o laboratório não
    consegue verificar para você, e sem ele o agente não funciona.
+
+   O token do GitHub é um *Personal Access Token (classic)*, gerado em
+   <https://github.com/settings/tokens>, com os escopos:
+
+   - `repo` — criar e editar repositórios, push, pull, branches
+   - `write:packages` — publicar imagens no ghcr.io
+   - `workflow` — opcional, só se você for disparar workflows pela API
+
+   Gere antes de vir e guarde: o GitHub mostra o token uma única vez.
+
+5. **(Opcional) Um bot do Telegram**, se quiser conversar com o agente pelo
+   celular. A ligação é feita ao vivo, mas o bot você cria antes:
+
+   1. Fale com o [@BotFather](https://t.me/BotFather) e envie `/newbot`
+   2. Escolha um nome e um username terminado em `bot`
+   3. Guarde o token que ele devolve
+   4. Fale com o [@userinfobot](https://t.me/userinfobot) para descobrir o seu
+      **id numérico** — é ele que autoriza o acesso ao bot, não o @username
 
 ### Se você está no Windows com WSL
 

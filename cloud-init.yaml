@@ -79,12 +79,16 @@ write_files:
 
       Para ligar o bot do Telegram (opcional, também no workshop):
 
-        3. printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=@SEU_ID\n' >> /root/.hermes/.env
+        3. printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=12345678\n' >> /root/.hermes/.env
            chmod 600 /root/.hermes/.env
            hermes gateway restart
 
       O gateway JÁ ESTÁ RODANDO desde que a VM subiu, como serviço de usuário
       do systemd. Por isso é 'restart': ele precisa reler o .env.
+
+      O TELEGRAM_BOT_TOKEN é o que o @BotFather devolve ao criar o bot. O
+      TELEGRAM_ALLOWED_USERS é o seu id numérico do Telegram, não o @username —
+      para descobrir, fale com o @userinfobot no próprio Telegram.
 
       Cofounder
       ---------
