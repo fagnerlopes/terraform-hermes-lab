@@ -19,7 +19,7 @@ say "${BLUE}━━━━━━━━━━━━━━━━━━━━━━�
 say ""
 
 # ---------------------------------------------------------------- prereqs ---
-say "${BLUE}1/4 Verificando pré-requisitos${NC}"
+say "${BLUE}1/5 Verificando pré-requisitos${NC}"
 missing=0
 need() {
     if command -v "$1" >/dev/null 2>&1; then
@@ -88,6 +88,32 @@ if [ "$missing" -ne 0 ]; then
 fi
 say ""
 
+# ------------------------------------------------------------------- name ---
+# Names the network, the keypair and the instance (main.tf). CloudStack requires
+# it to be unique within the account, so anyone running a second lab in the same
+# account has to change it here.
+say "${BLUE}2/5 Nome do laboratório${NC}"
+say "Esse nome identifica a VM, a rede e a chave no painel da Locaweb."
+say "Precisa ser único na sua conta. Enter aceita o padrão."
+say ""
+
+VM_NAME_DEFAULT="hermes-lab"
+# Same rule as the vm_name validation in variables.tf. Checking it here turns a
+# Terraform error at plan time into an immediate re-prompt.
+VM_NAME_RE='^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$'
+
+while :; do
+    printf "%b" "Nome do laboratório [${VM_NAME_DEFAULT}]: "
+    read -r VM_NAME || { say ""; err "Entrada interrompida."; exit 1; }
+    VM_NAME="${VM_NAME:-$VM_NAME_DEFAULT}"
+    if [[ "$VM_NAME" =~ $VM_NAME_RE ]]; then
+        break
+    fi
+    err "De 3 a 32 caracteres: minúsculas, números e hífen, começando e terminando com letra ou número."
+done
+ok "Nome: ${VM_NAME}"
+say ""
+
 # ------------------------------------------------------------ existing file -
 if [ -f "$TFVARS" ]; then
     warn "$TFVARS já existe."
@@ -100,7 +126,7 @@ if [ -f "$TFVARS" ]; then
 fi
 
 # --------------------------------------------------------------- questions --
-say "${BLUE}2/4 Credenciais do Locaweb Cloud${NC}"
+say "${BLUE}3/5 Credenciais do Locaweb Cloud${NC}"
 say ""
 say "  Para gerar suas chaves:"
 say "    1. Acesse ${BLUE}https://painel-cloud.locaweb.com.br${NC}"
@@ -126,7 +152,7 @@ case "$API_KEY$SECRET_KEY" in
 esac
 
 # ------------------------------------------------------------- validation ---
-say "${BLUE}3/4 Validando as chaves na API${NC}"
+say "${BLUE}4/5 Validando as chaves na API${NC}"
 
 urlencode() {
     local s="$1" i c out=""
@@ -182,12 +208,13 @@ esac
 say ""
 
 # ----------------------------------------------------------------- write ----
-say "${BLUE}4/4 Gravando $TFVARS${NC}"
+say "${BLUE}5/5 Gravando $TFVARS${NC}"
 umask 077
 cat > "$TFVARS" <<EOF
 # Gerado por scripts/setup.sh. Contém segredos — não versione este arquivo.
 cloudstack_api_key    = "${API_KEY}"
 cloudstack_secret_key = "${SECRET_KEY}"
+vm_name               = "${VM_NAME}"
 EOF
 chmod 600 "$TFVARS"
 ok "$TFVARS criado (permissão 600)."

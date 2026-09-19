@@ -381,6 +381,24 @@ Vale também deixar instalados os pré-requisitos da seção
 [Antes de começar](#antes-de-começar), para que ninguém gaste tempo com
 `apt-get` durante o workshop.
 
+### Testando um segundo laboratório na mesma conta
+
+O `make up` pergunta o **nome do laboratório** (padrão `hermes-lab`) e é ele que
+nomeia a VM, a rede e a chave no painel. O CloudStack exige que esse nome seja
+único **dentro da conta**, então um segundo laboratório na mesma conta precisa
+de um nome diferente — é o caso de quem já tem um lab rodando e vai testar a
+imagem base em outra máquina.
+
+Cada cópia do repositório tem o seu próprio `terraform.tfstate`, e o `destroy`
+só mexe no que está no state daquela cópia. Uma máquina não alcança a VM da
+outra.
+
+O que **não** funciona é trocar o nome dentro da pasta de um laboratório que já
+existe: o nome é `ForceNew` nos três recursos, então o Terraform planeja
+destruir o lab atual e recriá-lo com o nome novo. O `make up` mostra isso em
+vermelho e exige `sim` por extenso — mas o `make up-auto` não pergunta nada.
+Para um segundo laboratório, use uma pasta nova.
+
 ---
 
 ## Licença
