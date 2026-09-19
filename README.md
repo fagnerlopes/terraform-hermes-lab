@@ -15,20 +15,19 @@ Você precisa de:
 1. **Sua conta no Locaweb Cloud, ativada com o cupom do TDC.**
 
    Contrate em <https://www.locaweb.com.br/locaweb-cloud/> e aplique o cupom
-   que o time do TDC enviou para você. Ele foi gerado para este workshop e
-   cobre os recursos de computação que vamos usar aqui — **e vale até
-   30/10/2026**.
+   que o time do TDC enviou para você. Ele foi gerado para este workshop e é
+   suficiente para rodar o experimento durante as duas primeiras faturas:
+   seguindo o roteiro do workshop, você não terá nenhum pagamento nesse
+   período.
 
-   Esse prazo é o melhor da história: o agente que você vai construir hoje não
-   morre quando a palestra acabar. Ele continua rodando, na sua conta, na sua
-   infraestrutura, para você continuar mexendo, quebrando e refazendo com
-   calma. É tempo para experimentar o Locaweb Cloud de verdade, com uma coisa
-   sua rodando em cima dele.
+   E o melhor: o agente que você vai construir hoje não morre quando a palestra
+   acabar. Ele continua rodando, na sua conta, na sua infraestrutura, para você
+   continuar mexendo, quebrando e refazendo com calma.
 
-   O Locaweb Cloud é pós-pago: você paga pelo que usar, e o cupom cobre esse
-   consumo até 30/10/2026. A partir daí, o que continuar de pé volta a ser
-   cobrado normalmente — veja [Ao terminar](#ao-terminar) para desligar quando
-   quiser.
+   O Locaweb Cloud é pós-pago: você paga pelo que usar, e o cupom é abatido
+   desse consumo. O roteiro usa **uma** VM — é para ela que o cupom foi
+   dimensionado. Veja [Custo](#custo) antes de subir mais alguma coisa, e
+   [Ao terminar](#ao-terminar) para desligar quando quiser.
 
    Não recebeu o cupom? Procure o time do TDC antes de seguir.
 
@@ -208,10 +207,10 @@ mkdir -p ~/meu-app && cd ~/meu-app
 
 ## Ao terminar
 
-**Não desligue nada quando a palestra acabar.** O cupom do TDC vale até
-**30/10/2026**, e o laboratório é seu até lá: deixe o agente de pé, volte nele
-durante a semana, quebre, refaça, instale o que quiser. Foi para isso que o
-cupom existe.
+**Não desligue nada quando a palestra acabar.** Deixe o agente de pé, volte
+nele durante a semana, quebre, refaça, instale o que quiser dentro da VM. Foi
+para isso que o cupom existe — ele cobre esse laboratório nas duas primeiras
+faturas.
 
 O que fazer antes de ir embora depende de onde você está rodando.
 
@@ -236,8 +235,7 @@ depois, será pelo painel da Locaweb.
 
 ### Se o computador é seu
 
-Deixe tudo como está e continue usando. Quando terminar de experimentar — ou
-perto de 30/10/2026, para não ser cobrado:
+Deixe tudo como está e continue usando. Quando terminar de experimentar:
 
 ```bash
 make down
@@ -250,9 +248,9 @@ Você também pode destruir e subir de novo quantas vezes quiser: `make down`
 hoje, `make up` amanhã. São uns 15 minutos para ter tudo no ar de novo, do
 zero. O que não volta é o que você tiver configurado dentro da VM.
 
-Passada a data do cupom, o que continuar existindo passa a ser cobrado na sua
-conta. Se quiser seguir com o agente no ar além disso, ótimo — só vale saber
-que a partir dali a conta é sua.
+Esgotado o cupom, o que continuar de pé entra na sua fatura. Se quiser seguir
+com o agente no ar além disso, ótimo — só vale saber que a partir dali a conta
+é sua.
 
 ### Se as suas chaves rodaram numa máquina que não é sua
 
@@ -328,12 +326,16 @@ Ele imprime o comando de instalação de cada um. Instale e rode de novo.
 
 ## Custo
 
-O Locaweb Cloud é pós-pago e a VM gera consumo enquanto existir — mas até
-**30/10/2026** esse consumo está coberto pelo cupom do TDC. Use à vontade nesse
-período.
+O Locaweb Cloud é pós-pago: a VM gera consumo enquanto existir, e o cupom do
+TDC é abatido dele. O cupom é suficiente para rodar o experimento durante as
+duas primeiras faturas — seguindo o roteiro do workshop, você não terá nenhum
+pagamento nesse período.
 
-Passada a data, o consumo passa a ser cobrado na sua conta. `make down` encerra:
-ele destrói a VM, a rede e o IP público.
+O roteiro é **uma** VM. Subir várias ao mesmo tempo consome o cupom mais rápido
+do que ele cobre, e a diferença entra na sua fatura.
+
+Quando for passar um tempo sem mexer, `make down` encerra o consumo: ele destrói
+a VM, a rede e o IP público. Voltar custa 15 minutos de `make up`.
 
 ---
 
