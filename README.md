@@ -75,7 +75,10 @@ cd terraform-hermes-lab
 ```
 
 **Use o Docker de dentro do WSL.** Se você usa Docker Desktop, ative a
-integração com a sua distro em *Settings → Resources → WSL Integration*. Se
+integração com a sua distro em *Settings → Resources → WSL Integration*, e
+marque também *Settings → General → Start Docker Desktop when you sign in* — com
+o app fechado o `docker` até existe no WSL, mas não responde, e o laboratório
+para antes de começar. Se
 preferir instalar o Docker dentro do WSL, lembre de ligar o systemd — crie
 `/etc/wsl.conf` com:
 

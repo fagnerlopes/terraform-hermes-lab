@@ -36,7 +36,7 @@ setup: ## Coleta e valida as credenciais, gerando o terraform.tfvars
 ensure-setup:
 	@if [ ! -f terraform.tfvars ]; then \
 		echo "$(YELLOW)Nenhum terraform.tfvars encontrado — vamos criar um.$(NC)"; echo ""; \
-		./scripts/setup.sh; echo ""; \
+		./scripts/setup.sh || exit 1; echo ""; \
 	fi
 
 ensure-key:
@@ -114,14 +114,14 @@ require-key:
 ensure-init:
 	@if [ ! -d .terraform ]; then \
 		echo "$(BLUE)Construindo a imagem do Terraform...$(NC)"; \
-		docker compose build; \
+		docker compose build || exit 1; \
 		echo "$(BLUE)Inicializando o Terraform...$(NC)"; \
 		$(TF) init -input=false; \
 	fi
 
 # --------------------------------------------------------------- lifecycle --
 
-up: ## Cria a VM e instala o Hermes, mostrando antes o que será feito (10-20 min)
+up: ## Cria a VM e instala o Hermes, mostrando antes o que será feito (15-25 min)
 	@$(MAKE) --no-print-directory ensure-setup
 	@$(MAKE) --no-print-directory ensure-key-usable
 	@$(MAKE) --no-print-directory ensure-key

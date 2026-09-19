@@ -29,18 +29,56 @@ need() {
         missing=1
     fi
 }
-need docker      "sudo apt-get install -y docker.io"
+# Most of this workshop's audience runs Windows + WSL with Docker Desktop, where
+# "install it with apt" is the wrong advice — the Docker that matters lives on
+# the Windows side.
+is_wsl() { grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; }
+
+if is_wsl; then
+    docker_hint="Docker Desktop no Windows, com a integração WSL ligada (Settings -> Resources -> WSL Integration)"
+else
+    docker_hint="sudo apt-get install -y docker.io"
+fi
+
+need docker      "$docker_hint"
 need make        "sudo apt-get install -y make"
 need jq          "sudo apt-get install -y jq"
 need ssh-keygen  "sudo apt-get install -y openssh-client"
 need openssl     "sudo apt-get install -y openssl"
 need curl        "sudo apt-get install -y curl"
 
-if ! docker compose version >/dev/null 2>&1; then
-    err "'docker compose' não disponível — instale com: sudo apt-get install -y docker-compose-plugin"
-    missing=1
-else
-    ok "docker compose"
+# The daemon comes BEFORE the compose plugin on purpose. `command -v docker`
+# above only proves the name resolves in PATH — it never runs anything — and
+# `docker compose version` is a client-side call that never reaches the daemon
+# either. So a stopped Docker Desktop passes every check above and only blows up
+# later, inside `docker compose build`. Checking it here turns the most common
+# Windows failure into the message that actually fixes it.
+if command -v docker >/dev/null 2>&1; then
+    if ! docker info >/dev/null 2>&1; then
+        err "o Docker está instalado, mas não respondeu."
+        if is_wsl; then
+            say "    Abra o Docker Desktop e espere o ícone ficar verde."
+            say "    Para não passar por isso de novo, marque em Settings -> General:"
+            say "    'Start Docker Desktop when you sign in'."
+        else
+            say "    Inicie o serviço com: sudo systemctl start docker"
+        fi
+        missing=1
+    else
+        ok "docker rodando"
+        # Only meaningful once the daemon answers; otherwise it would report a
+        # missing plugin when the real problem is an app that is simply closed.
+        if ! docker compose version >/dev/null 2>&1; then
+            if is_wsl; then
+                err "'docker compose' não disponível — atualize o Docker Desktop, que já traz o compose"
+            else
+                err "'docker compose' não disponível — instale com: sudo apt-get install -y docker-compose-plugin"
+            fi
+            missing=1
+        else
+            ok "docker compose"
+        fi
+    fi
 fi
 
 if [ "$missing" -ne 0 ]; then
