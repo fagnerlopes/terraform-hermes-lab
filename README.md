@@ -76,9 +76,7 @@ cd terraform-hermes-lab
 
 **Use o Docker de dentro do WSL.** Se você usa Docker Desktop, ative a
 integração com a sua distro em *Settings → Resources → WSL Integration*, e
-marque também *Settings → General → Start Docker Desktop when you sign in* — com
-o app fechado o `docker` até existe no WSL, mas não responde, e o laboratório
-para antes de começar. Se
+marque *Settings → General → Start Docker Desktop when you sign in*. Se
 preferir instalar o Docker dentro do WSL, lembre de ligar o systemd — crie
 `/etc/wsl.conf` com:
 
@@ -148,9 +146,8 @@ make up-auto
 > `ssh-keygen -f ~/.ssh/known_hosts -R <IP>`
 
 **A instalação leva de 15 a 25 minutos.** O instalador oficial do Hermes monta
-um ambiente Python + Node e baixa o Chromium, e logo depois a VM ainda pré-baixa
-as dependências do Cofounder — é normal demorar. Pode deixar rodando e ir tomar
-um café.
+um ambiente Python + Node e baixa o Chromium — é normal demorar. Pode deixar
+rodando e ir tomar um café.
 
 Se a sua conexão cair no meio, nada se perde: rode `make status` para ver em
 que fase está, ou `make logs` para acompanhar o log dentro da VM.
@@ -198,13 +195,9 @@ pré-requisitos. Daí em diante, seguimos juntos no workshop.
 
 ## Cofounder
 
-A VM já vem com tudo o que o instalador do Cofounder baixaria na hora: o
-`podman`, o `mise`, o `gh`, os toolchains do Node e as bibliotecas de sistema do
-Chromium. O instalador reconhece cada um deles e pula direto para a configuração
-do projeto, em segundos.
-
-Rode-o **de dentro da pasta do projeto**. Em `$HOME` ele instala só as
-ferramentas — que já estão aqui — e não configura projeto nenhum:
+A VM já vem com as dependências do Cofounder instaladas, então o instalador
+roda em segundos. Chame-o **de dentro da pasta do projeto** — em `$HOME` ele não
+configura projeto nenhum:
 
 ```bash
 mkdir -p ~/meu-app && cd ~/meu-app
@@ -380,24 +373,6 @@ da aula.
 Vale também deixar instalados os pré-requisitos da seção
 [Antes de começar](#antes-de-começar), para que ninguém gaste tempo com
 `apt-get` durante o workshop.
-
-### Testando um segundo laboratório na mesma conta
-
-O `make up` pergunta o **nome do laboratório** (padrão `hermes-lab`) e é ele que
-nomeia a VM, a rede e a chave no painel. O CloudStack exige que esse nome seja
-único **dentro da conta**, então um segundo laboratório na mesma conta precisa
-de um nome diferente — é o caso de quem já tem um lab rodando e vai testar a
-imagem base em outra máquina.
-
-Cada cópia do repositório tem o seu próprio `terraform.tfstate`, e o `destroy`
-só mexe no que está no state daquela cópia. Uma máquina não alcança a VM da
-outra.
-
-O que **não** funciona é trocar o nome dentro da pasta de um laboratório que já
-existe: o nome é `ForceNew` nos três recursos, então o Terraform planeja
-destruir o lab atual e recriá-lo com o nome novo. O `make up` mostra isso em
-vermelho e exige `sim` por extenso — mas o `make up-auto` não pergunta nada.
-Para um segundo laboratório, use uma pasta nova.
 
 ---
 

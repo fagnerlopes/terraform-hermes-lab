@@ -190,6 +190,13 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   a linha de PATH resolvem o destino a partir dele. E `podman`, nunca
   `podman-docker`: esse pacote instala um shim em `/var/run/docker.sock` que
   brigaria com o Docker Engine do sandbox do Hermes.
+- **`vm_name` é único por conta, e é `ForceNew`.** Ele nomeia a rede, o keypair
+  e a instância. Dois laboratórios na mesma conta precisam de nomes diferentes —
+  a API recusa o keypair duplicado. E trocar o nome na pasta de um lab que já
+  existe não cria um segundo: planeja destruir e recriar o atual. Cada cópia do
+  repo tem state próprio, então é pasta nova para lab novo. Cenário de
+  organizador testando a imagem base com um lab já no ar; o participante não
+  esbarra nisso e por isso não está no README.
 - **`-T` em todo `docker compose run`.** Sem isso a saída vem com `\r` e as
   comparações de shell no Makefile quebram silenciosamente.
 
