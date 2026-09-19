@@ -251,6 +251,46 @@ console web do painel, mesmo sem a chave SSH.
 E atenção: junto com o state vai embora o `make down`. Se quiser destruir a VM
 depois, será pelo painel da Locaweb.
 
+### Voltando à VM em casa
+
+Se você rodou o `make clear` na máquina do evento, tudo o que sobrou é o
+`CREDENCIAIS.txt`. Ele basta: a VM continua no ar e a senha continua valendo no
+console web.
+
+**1. Entrar agora, sem instalar nada.** Abra
+<https://painel-cloud.locaweb.com.br>, localize a VM, abra o **console** e entre
+como `root` com a senha do `CREDENCIAIS.txt`. Você já está dentro — o agente e
+tudo o que você configurou continuam lá.
+
+**2. Voltar a entrar por SSH** (o console web é desconfortável para trabalhar).
+No seu computador de casa, gere um par de chaves:
+
+```bash
+ssh-keygen -t ed25519 -N '' -f ~/.ssh/hermes_lab
+cat ~/.ssh/hermes_lab.pub
+```
+
+Copie a linha inteira que o `cat` mostrou. No console web da VM, cole-a assim —
+substituindo `COLE_AQUI` pela linha:
+
+```bash
+mkdir -p /root/.ssh && chmod 700 /root/.ssh
+echo 'COLE_AQUI' >> /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+```
+
+A partir daí, do seu terminal, usando o IP do `CREDENCIAIS.txt`:
+
+```bash
+ssh -i ~/.ssh/hermes_lab -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null root@SEU_IP
+```
+
+**3. O que não funciona mais.** Os comandos `make ssh`, `make status`,
+`make logs` e `make down` leem o IP do `terraform.tfstate`, que ficou na máquina
+do evento. Em casa, use o `ssh` acima. E para destruir a VM quando terminar, vá
+pelo painel da Locaweb — sem o state, o Terraform não sabe o que destruir.
+
 ### Se o computador é seu
 
 Deixe tudo como está e continue usando. Quando terminar de experimentar:
