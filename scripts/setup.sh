@@ -13,6 +13,39 @@ ok()   { printf "%b\n" "${GREEN}✓${NC} $1"; }
 warn() { printf "%b\n" "${YELLOW}⚠${NC}  $1"; }
 err()  { printf "%b\n" "${RED}✗${NC} $1" >&2; }
 
+# Reads a secret without echoing it, printing one asterisk per character. A
+# plain `read -s` shows nothing at all, and beginners who see a blank line
+# conclude the paste failed and paste again — observed with real users. The
+# asterisks answer the doubt at the moment it appears.
+read_secret() {
+    local prompt="$1" out="" char
+    printf "%b" "$prompt"
+    # IFS empty keeps leading/trailing spaces (the whitespace check downstream
+    # is what rejects them); -n1 returns one keystroke at a time, and an empty
+    # char is the Enter that ends the line.
+    while IFS= read -r -s -n1 char; do
+        [ -z "$char" ] && break
+        case "$char" in
+            $'\177'|$'\b')
+                if [ -n "$out" ]; then
+                    out="${out%?}"
+                    printf '\b \b'
+                fi
+                ;;
+            *)
+                out="$out$char"
+                printf '*'
+                ;;
+        esac
+    done
+    printf '\n'
+    SECRET_INPUT="$out"
+}
+
+# Safety net: if the script dies mid-read, the terminal must not be left with
+# echo turned off. Harmless when stdin is not a terminal.
+trap 'stty echo 2>/dev/null || true' EXIT
+
 say "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 say "${BLUE}  Laboratório Hermes — configuração inicial${NC}"
 say "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -136,9 +169,14 @@ say "    4. Copie a Chave da API e a Chave secreta"
 say ""
 
 read -r -p "  Chave da API: " API_KEY
-# Secret is read without echo so it never lands on screen or in shell history.
-read -r -s -p "  Chave secreta: " SECRET_KEY
+# Masked, not hidden: never lands on screen or in shell history, but the
+# participant still sees the paste land.
+read_secret "  Chave secreta: "
+SECRET_KEY="$SECRET_INPUT"
 say ""
+if [ -n "$SECRET_KEY" ]; then
+    ok "Chave secreta recebida (${#SECRET_KEY} caracteres)"
+fi
 say ""
 
 if [ -z "$API_KEY" ] || [ -z "$SECRET_KEY" ]; then
