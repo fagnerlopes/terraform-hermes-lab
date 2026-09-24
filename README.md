@@ -13,8 +13,11 @@ ao **Telegram**.
   ```bash
   sudo apt-get install -y make jq openssh-client openssl curl
   ```
+  
+  **Windows:** Instale o Docker Desktop, ative a virtualização e configure a integração com o WSL.
 
-  No WSL, clone o repositório dentro do Linux (`~/`), não em `/mnt/c/`.
+  No WSL:
+- Clone o repositório dentro do Linux (`~/`), não em `/mnt/c/`.
 - Chave de API de um provedor de LLM.
 - Token do GitHub (*Personal Access Token classic*, em
   <https://github.com/settings/tokens>) com os escopos `repo` e
