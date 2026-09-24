@@ -49,7 +49,7 @@ Informe a chave do provedor de LLM e o token do GitHub.
 Ainda na VM, substitua o token e o id:
 
 ```bash
-printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=SEU_ID\n' >> /root/.hermes/.env
+printf 'TELEGRAM_BOT_TOKEN=SEU_TOKEN\nTELEGRAM_ALLOWED_USERS=SEU_ID\nGH_TOKEN=PAT_CLASSIC_GITHUB\n' >> /root/.hermes/.env
 chmod 600 /root/.hermes/.env
 hermes gateway restart
 ```
