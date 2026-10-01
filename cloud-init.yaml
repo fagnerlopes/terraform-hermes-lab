@@ -28,6 +28,12 @@ packages:
   - ca-certificates
   - gnupg
   - jq
+  # The Node that `hermes pm install` downloads is prebuilt and links against
+  # libatomic, which this Ubuntu image does not ship. Without it the staged
+  # binary fails verification with "libatomic.so.1: cannot open shared object
+  # file", node is dropped, and the whole pm install fails. Python and ripgrep
+  # are unaffected, so the log looks healthy right up to the end.
+  - libatomic1
 
 chpasswd:
   expire: false
