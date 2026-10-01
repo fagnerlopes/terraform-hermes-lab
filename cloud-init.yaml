@@ -28,6 +28,11 @@ packages:
   - ca-certificates
   - gnupg
   - jq
+  # The Node that `hermes pm install` downloads is prebuilt and links against
+  # libatomic, which this Ubuntu image does not ship. Without it the staged
+  # binary fails verification with "libatomic.so.1: cannot open shared object
+  # file", node is dropped, and the whole pm install fails. Python and ripgrep
+  # are unaffected, so the log looks healthy right up to the end.
   - libatomic1
 
 chpasswd:
@@ -133,14 +138,10 @@ runcmd:
     fail() { echo "ERRO: $1" > /var/lib/hermes-lab/status; exit 1; }
     warn() { echo "AVISO: $1"; }
 
-    # cloud-init does not guarantee HOME; install.sh dereferences it under
-    # `set -u` and dies before printing anything useful.
+    # cloud-init does not guarantee HOME, and it is needed from the very first
+    # phase on: the Hermes installer runs under `set -u` and dereferences it,
+    # dying with "HOME: unbound variable" before it prints anything useful.
     export HOME=/root
-    export DEBIAN_FRONTEND=noninteractive
-    # The installer publishes the CLI to ~/.local/bin and only adds it to
-    # ~/.bashrc; cloud-init runcmd is not a login shell, so `hermes` would be
-    # "command not found" in phases 3-5.
-    export PATH="$HOME/.local/bin:$PATH"
 
     # 1) Docker from the official repo. NOT snap, NOT docker.io: the snap
     #    build breaks the --init / no-new-privileges flags the sandbox needs.
@@ -159,7 +160,8 @@ runcmd:
       warn "Docker indisponível — o sandbox vai usar o podman"
     fi
 
-    # Podman: sandbox fallback for phase 3. Not `podman-docker` — it ships a
+    # Podman: sandbox fallback for phase 3, which has to see the engine
+    # before it picks terminal.backend. Not `podman-docker` — it ships a
     # /var/run/docker.sock shim that would fight Docker.
     apt-get install -y -qq podman || warn "instalação do podman"
 
@@ -173,21 +175,34 @@ runcmd:
 
     # 3) Confine the agent's terminal/execute_code/file actions to a container.
     say "3/5 configurando o sandbox do terminal"
+
+    # Docker if phase 1 brought it up, podman otherwise — the engine is a
+    # preference, not a requirement: the lab reaches 5/5 either way.
     BACKEND=docker
-    if [ "$DOCKER_OK" = "1" ] && command -v docker >/dev/null 2>&1 && systemctl is-active --quiet docker; then
-      BACKEND=docker
-    elif command -v podman >/dev/null 2>&1; then
-      BACKEND=podman
-    elif command -v docker >/dev/null 2>&1; then
-      BACKEND=docker
+    if [ "$DOCKER_OK" != "1" ] || ! systemctl is-active --quiet docker; then
+      command -v podman >/dev/null 2>&1 && BACKEND=podman
     fi
-    hermes config set terminal.backend "$BACKEND" || warn "hermes config set terminal.backend (tentando com $BACKEND)"
-    hermes config set terminal.container_cpu ${sandbox_cpu}
-    hermes config set terminal.container_memory ${sandbox_memory_mb}
+
+    # The installer publishes its launcher under $HOME/.local/bin and runs the
+    # real entrypoint from inside its own install dir. It does NOT create
+    # /usr/local/bin/hermes any more, and a hardcoded path there failed the
+    # phase outright. Resolve it, newest layout first, old path last.
+    HERMES=""
+    for c in "$HOME/.local/bin/hermes" \
+             "$HOME/.hermes/hermes-agent/.hermes/bin/hermes" \
+             /usr/local/bin/hermes; do
+      [ -x "$c" ] && HERMES="$c" && break
+    done
+    [ -n "$HERMES" ] || HERMES="$(command -v hermes 2>/dev/null || true)"
+    [ -n "$HERMES" ] || fail "localizar o executável do hermes"
+
+    "$HERMES" config set terminal.backend "$BACKEND" || fail "hermes config set terminal.backend"
+    "$HERMES" config set terminal.container_cpu ${sandbox_cpu}
+    "$HERMES" config set terminal.container_memory ${sandbox_memory_mb}
 
     # Installs AND starts the gateway as a systemd USER service — plain
     # `systemctl` will not show it, it needs `systemctl --user`.
-    hermes gateway install || true
+    "$HERMES" gateway install || true
 
     # 4) Mirror the machine half of cofounder.locaweb.com.br/install.sh, so
     #    the participant's run hits its idempotency guards and skips to
@@ -195,8 +210,8 @@ runcmd:
     #    lab is Hermes, and "5/5 pronto" must not depend on a third-party repo.
     say "4/5 preparando as dependências do Cofounder"
     warn() { echo "AVISO: $1 falhou — o install.sh do Cofounder refaz esta parte"; }
-
-    # podman came with phase 1: phase 3 has to see it to pick the sandbox
+    export DEBIAN_FRONTEND=noninteractive
+    # podman came with phase 1: phase 3 had to see it to pick the sandbox
     # backend, and install.sh:187 guards on `have podman` to skip the download.
 
     # gh, from the GitHub CLI apt repo — the same source the installer uses.

@@ -5,7 +5,7 @@
 #
 # Deliberately no web terminal and no HTTP port: SSH is the only way in.
 
-# Resolvido por nome
+# Resolved by name, never pinned by UUID — see the note in locals.tf.
 data "cloudstack_template" "ubuntu_2404" {
   template_filter = "featured"
 

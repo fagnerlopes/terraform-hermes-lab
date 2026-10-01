@@ -178,26 +178,40 @@ plan-and-confirm:
 	fi
 
 wait-ready:
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(RED)Não consegui obter o IP. Rode 'make output'.$(NC)"; exit 1; fi; \
 	echo ""; \
 	INITIAL=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
-	if [ "$$INITIAL" = "5/5 pronto" ]; then \
-		echo "$(GREEN)A VM em $$IP já está no ar, com o Hermes instalado.$(NC)"; \
-		echo "$(GREEN)Nada foi recriado — nenhuma espera necessária.$(NC)"; \
-		exit 0; \
-	fi; \
+	case "$$INITIAL" in \
+		ERRO*) ;; \
+		*pronto) \
+			echo "$(GREEN)A VM em $$IP já está no ar, com o Hermes instalado.$(NC)"; \
+			echo "$(GREEN)Nada foi recriado — nenhuma espera necessária.$(NC)"; \
+			exit 0 ;; \
+	esac; \
 	echo "$(BLUE)VM em $$IP. Instalando o Hermes Agent — isso leva de 15 a 25 minutos.$(NC)"; \
 	echo "$(YELLOW)Pode deixar rodando; o progresso aparece abaixo.$(NC)"; \
 	echo ""; \
-	DONE=0; \
+	DONE=0; SEEN=0; NOSSH=0; \
 	for i in $$(seq 1 360); do \
 		STATUS=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
-		[ -z "$$STATUS" ] && STATUS="aguardando a VM responder ao SSH"; \
+		if [ -z "$$STATUS" ]; then \
+			NOSSH=$$((NOSSH + 1)); STATUS="aguardando a VM responder ao SSH"; \
+		else \
+			SEEN=1; NOSSH=0; \
+		fi; \
+		if [ $$SEEN -eq 0 ] && [ $$NOSSH -ge 60 ]; then \
+			printf "%-75s\r" " "; \
+			echo "$(RED)Cinco minutos sem nenhuma resposta no SSH.$(NC)"; \
+			echo "$(YELLOW)O mais comum é a VM estar desligada: confira no painel da Locaweb$(NC)"; \
+			echo "$(YELLOW)e, se o estado for 'Stopped', ligue-a por lá.$(NC)"; \
+			echo "$(YELLOW)Depois rode 'make up' de novo — ele não recria a VM.$(NC)"; \
+			exit 1; \
+		fi; \
 		case "$$STATUS" in \
 			ERRO*) echo ""; echo "$(RED)$$STATUS$(NC)"; \
 				echo "$(YELLOW)Veja o log completo com: make logs$(NC)"; exit 1 ;; \
-			"5/5 pronto") DONE=1 ;; \
+			*pronto) DONE=1 ;; \
 		esac; \
 		[ $$DONE -eq 1 ] && break; \
 		printf "  $(YELLOW)[%3d/360]$(NC) %-55s\r" $$i "$$STATUS"; \
@@ -273,19 +287,19 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 
 ssh: ## Abre uma sessão SSH na VM
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
 
 status: ## Mostra em que fase está a instalação
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	echo "$(BLUE)Fase:$(NC) $$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null || echo 'sem resposta no SSH')"
 
 logs: ## Acompanha o log da instalação na VM
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP 'tail -f -n 200 /var/log/hermes-lab.log' || true   # Ctrl-C on the tail is not a make failure
 
