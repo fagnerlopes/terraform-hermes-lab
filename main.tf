@@ -5,6 +5,18 @@
 #
 # Deliberately no web terminal and no HTTP port: SSH is the only way in.
 
+# Resolved by name, never pinned by UUID — see the note in locals.tf. The
+# same template is registered in every zone, so the name matches more than one
+# row; they all carry the same id.
+data "cloudstack_template" "ubuntu_2404" {
+  template_filter = "featured"
+
+  filter {
+    name  = "name"
+    value = local.template_ubuntu_2404_name
+  }
+}
+
 resource "cloudstack_network" "lab" {
   name             = var.vm_name
   display_text     = "Rede do laboratório Hermes"
@@ -39,7 +51,7 @@ resource "cloudstack_instance" "lab" {
   name             = var.vm_name
   display_name     = "Hermes Lab — TDC"
   service_offering = var.service_offering
-  template         = local.template_ubuntu_2404_id
+  template         = data.cloudstack_template.ubuntu_2404.id
   zone             = local.zone_id
   network_id       = cloudstack_network.lab.id
   keypair          = cloudstack_ssh_keypair.lab.name
