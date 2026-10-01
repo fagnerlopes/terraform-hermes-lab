@@ -153,24 +153,41 @@ runcmd:
     # 2) Hermes Agent, official installer. Takes 5-15 min: it builds a managed
     #    Python + Node environment and downloads Playwright/Chromium.
     #    --skip-setup/--non-interactive because there is no TTY in cloud-init;
-    #    the wizard is the participant's job, live.
+    #    the wizard is the participant's job, live. Flags stay at the minimum
+    #    the installer actually accepts: it rejects anything unknown with
+    #    `exit 1`, and --no-skills was dropped upstream (skills are now synced
+    #    by the build itself).
     say "2/5 instalando Hermes Agent (leva de 5 a 15 minutos)"
     curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
-      | bash -s -- --skip-setup --non-interactive --skip-computer-use --no-skills \
+      | bash -s -- --skip-setup --non-interactive --skip-computer-use \
       || fail "instalação do Hermes Agent"
 
     # 3) Confine the agent's terminal/execute_code/file actions to a container.
     say "3/5 configurando o sandbox do terminal"
-    /usr/local/bin/hermes config set terminal.backend docker || fail "hermes config set terminal.backend"
-    /usr/local/bin/hermes config set terminal.container_cpu ${sandbox_cpu}
-    /usr/local/bin/hermes config set terminal.container_memory ${sandbox_memory_mb}
+
+    # The installer publishes its launcher under $HOME/.local/bin and runs the
+    # real entrypoint from inside its own install dir. It does NOT create
+    # /usr/local/bin/hermes any more, and a hardcoded path there failed the
+    # phase outright. Resolve it, newest layout first, old path last.
+    HERMES=""
+    for c in "$HOME/.local/bin/hermes" \
+             "$HOME/.hermes/hermes-agent/.hermes/bin/hermes" \
+             /usr/local/bin/hermes; do
+      [ -x "$c" ] && HERMES="$c" && break
+    done
+    [ -n "$HERMES" ] || HERMES="$(command -v hermes 2>/dev/null || true)"
+    [ -n "$HERMES" ] || fail "localizar o executável do hermes"
+
+    "$HERMES" config set terminal.backend docker || fail "hermes config set terminal.backend"
+    "$HERMES" config set terminal.container_cpu ${sandbox_cpu}
+    "$HERMES" config set terminal.container_memory ${sandbox_memory_mb}
 
     # Installs and starts the gateway as a systemd USER service (note: plain
     # `systemctl` will not show it; it needs `systemctl --user`). It comes up
     # even with no bot token in /root/.hermes/.env — there is simply no
     # Telegram transport to serve until the participant adds one and runs
     # `hermes gateway restart`.
-    /usr/local/bin/hermes gateway install || true
+    "$HERMES" gateway install || true
 
     # 4) Warm up what the Cofounder installer would otherwise download live, in
     #    front of the room. This block mirrors the machine-level half of
