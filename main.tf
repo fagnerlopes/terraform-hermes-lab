@@ -5,9 +5,7 @@
 #
 # Deliberately no web terminal and no HTTP port: SSH is the only way in.
 
-# Resolved by name, never pinned by UUID — see the note in locals.tf. The
-# same template is registered in every zone, so the name matches more than one
-# row; they all carry the same id.
+# Resolved by name, never pinned by UUID — see the note in locals.tf.
 data "cloudstack_template" "ubuntu_2404" {
   template_filter = "featured"
 
@@ -64,7 +62,12 @@ resource "cloudstack_instance" "lab" {
   # the VM on EVERY apply. Left unset, the attribute is Computed and simply
   # takes whatever the offering gives.
 
-  user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
+  # base64gzip, NOT base64encode: o CloudStack limita o userdata em ~16 KB
+  # codificado, e o YAML mais o base64 fica em ~14,7 KB — passa, mas sem
+  # folga nenhuma para o cloud-init crescer. Comprimido são ~6 KB.
+  # cloud-init no Ubuntu 24.04 descompacta user_data gzipada, então o guest
+  # recebe exatamente os mesmos bytes.
+  user_data = base64gzip(templatefile("${path.module}/cloud-init.yaml", {
     root_password     = random_password.root.result
     sandbox_cpu       = var.sandbox_cpu
     sandbox_memory_mb = var.sandbox_memory_mb

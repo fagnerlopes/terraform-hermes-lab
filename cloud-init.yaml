@@ -76,7 +76,7 @@ write_files:
       no console web do painel da Locaweb — é o resgate caso você perca a
       chave. Ela está no arquivo CREDENCIAIS.txt, na pasta do repositório.
 
-      A VM já tem o Hermes Agent instalado no host e o Docker configurado como
+      A VM já tem o Hermes Agent instalado no host e o Docker/Podman configurado como
       sandbox do terminal do agente. O que falta é a configuração, que fazemos
       juntos no workshop:
 
@@ -122,8 +122,8 @@ write_files:
         hermes --version
         hermes gateway status                   # estado do gateway
         hermes logs                             # logs do agente
-        hermes config get terminal.backend      # deve responder: docker
-        docker info
+        hermes config get terminal.backend      # docker (ou podman, se o Docker não veio)
+        docker info                             # o runtime que o agente escolheu
         systemctl --user list-units | grep -i hermes   # o gateway roda no escopo de USUÁRIO
         tail -f /var/log/hermes-lab.log         # log desta instalação
 
@@ -136,33 +136,38 @@ runcmd:
     mkdir -p /var/lib/hermes-lab
     say() { echo "$1" > /var/lib/hermes-lab/status; }
     fail() { echo "ERRO: $1" > /var/lib/hermes-lab/status; exit 1; }
+    warn() { echo "AVISO: $1"; }
 
     # cloud-init does not guarantee HOME, and it is needed from the very first
     # phase on: the Hermes installer runs under `set -u` and dereferences it,
     # dying with "HOME: unbound variable" before it prints anything useful.
-    # mise.run and the Cofounder PATH line in 4/5 resolve their target from it
-    # too. Export it once here, for every phase.
     export HOME=/root
 
-    # 1) Docker Engine from the official repo. NOT the snap and NOT docker.io:
-    #    the snap build breaks the --init / no-new-privileges flags that the
-    #    Hermes terminal sandbox relies on.
+    # 1) Docker from the official repo. NOT snap, NOT docker.io: the snap
+    #    build breaks the --init / no-new-privileges flags the sandbox needs.
     say "1/5 instalando Docker"
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc || fail "download da chave GPG do Docker"
-    chmod a+r /etc/apt/keyrings/docker.asc
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
-    apt-get update -qq || fail "apt-get update"
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || fail "instalação do Docker"
-    systemctl enable --now docker
+    DOCKER_OK=0
+    if curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+       chmod a+r /etc/apt/keyrings/docker.asc && \
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list && \
+       apt-get update -qq && \
+       apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; then
+      systemctl enable --now docker
+      DOCKER_OK=1
+    else
+      rm -f /etc/apt/sources.list.d/docker.list /etc/apt/keyrings/docker.asc
+      warn "Docker indisponível — o sandbox vai usar o podman"
+    fi
 
-    # 2) Hermes Agent, official installer. Takes 5-15 min: it builds a managed
-    #    Python + Node environment and downloads Playwright/Chromium.
-    #    --skip-setup/--non-interactive because there is no TTY in cloud-init;
-    #    the wizard is the participant's job, live. Flags stay at the minimum
-    #    the installer actually accepts: it rejects anything unknown with
-    #    `exit 1`, and --no-skills was dropped upstream (skills are now synced
-    #    by the build itself).
+    # Podman: sandbox fallback for phase 3, which has to see the engine
+    # before it picks terminal.backend. Not `podman-docker` — it ships a
+    # /var/run/docker.sock shim that would fight Docker.
+    apt-get install -y -qq podman || warn "instalação do podman"
+
+    # 2) Hermes Agent, official installer. Takes 5-15 min: managed Python +
+    #    Node, plus Playwright/Chromium. Any flag here must exist in
+    #    install.sh, which exits "unknown option" before doing anything.
     say "2/5 instalando Hermes Agent (leva de 5 a 15 minutos)"
     curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
       | bash -s -- --skip-setup --non-interactive --skip-computer-use \
@@ -170,6 +175,13 @@ runcmd:
 
     # 3) Confine the agent's terminal/execute_code/file actions to a container.
     say "3/5 configurando o sandbox do terminal"
+
+    # Docker if phase 1 brought it up, podman otherwise — the engine is a
+    # preference, not a requirement: the lab reaches 5/5 either way.
+    BACKEND=docker
+    if [ "$DOCKER_OK" != "1" ] || ! systemctl is-active --quiet docker; then
+      command -v podman >/dev/null 2>&1 && BACKEND=podman
+    fi
 
     # The installer publishes its launcher under $HOME/.local/bin and runs the
     # real entrypoint from inside its own install dir. It does NOT create
@@ -184,49 +196,36 @@ runcmd:
     [ -n "$HERMES" ] || HERMES="$(command -v hermes 2>/dev/null || true)"
     [ -n "$HERMES" ] || fail "localizar o executável do hermes"
 
-    "$HERMES" config set terminal.backend docker || fail "hermes config set terminal.backend"
+    "$HERMES" config set terminal.backend "$BACKEND" || fail "hermes config set terminal.backend"
     "$HERMES" config set terminal.container_cpu ${sandbox_cpu}
     "$HERMES" config set terminal.container_memory ${sandbox_memory_mb}
 
-    # Installs and starts the gateway as a systemd USER service (note: plain
-    # `systemctl` will not show it; it needs `systemctl --user`). It comes up
-    # even with no bot token in /root/.hermes/.env — there is simply no
-    # Telegram transport to serve until the participant adds one and runs
-    # `hermes gateway restart`.
+    # Installs AND starts the gateway as a systemd USER service — plain
+    # `systemctl` will not show it, it needs `systemctl --user`.
     "$HERMES" gateway install || true
 
-    # 4) Warm up what the Cofounder installer would otherwise download live, in
-    #    front of the room. This block mirrors the machine-level half of
-    #    https://cofounder.locaweb.com.br/install.sh — same tools, same targets —
-    #    so its idempotency guards (`have podman`, the libnspr4/libnss3 canary in
-    #    ldconfig, ...) all hit and the participant's run skips straight to the
-    #    per-project `npx skills add`.
-    #
-    #    Nothing here is fatal: the Cofounder is an accelerator, the lab is
-    #    Hermes. If the GitHub CLI repo is down during the event, the VM must
-    #    still reach "5/5 pronto".
+    # 4) Mirror the machine half of cofounder.locaweb.com.br/install.sh, so
+    #    the participant's run hits its idempotency guards and skips to
+    #    `npx skills add`. Never fatal: the Cofounder is an accelerator, the
+    #    lab is Hermes, and "5/5 pronto" must not depend on a third-party repo.
     say "4/5 preparando as dependências do Cofounder"
     warn() { echo "AVISO: $1 falhou — o install.sh do Cofounder refaz esta parte"; }
     export DEBIAN_FRONTEND=noninteractive
-
-    # podman. Deliberately NOT podman-docker: that package ships a
-    # /var/run/docker.sock shim that would fight the Docker Engine the Hermes
-    # terminal sandbox runs on.
-    apt-get install -y -qq podman || warn "instalação do podman"
+    # podman came with phase 1: phase 3 had to see it to pick the sandbox
+    # backend, and install.sh:187 guards on `have podman` to skip the download.
 
     # gh, from the GitHub CLI apt repo — the same source the installer uses.
     install -m 0755 -d /etc/apt/keyrings
     if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli-archive-keyring.gpg; then
       chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
       apt-get update -qq && apt-get install -y -qq gh || warn "instalação do gh"
     else
       warn "download da chave GPG do GitHub CLI"
     fi
 
-    # mise, into /root/.local/bin. mise.run only prints PATH instructions, so we
-    # persist the export ourselves — byte for byte the line the installer greps
-    # for, or it would append a second copy.
+    # mise.run only prints the PATH line, so persist it ourselves — byte for
+    # byte the one the installer greps for, or it appends a second copy.
     if [ ! -x /root/.local/bin/mise ]; then
       curl -fsSL https://mise.run | sh || warn "instalação do mise"
     fi
