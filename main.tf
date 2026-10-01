@@ -5,6 +5,16 @@
 #
 # Deliberately no web terminal and no HTTP port: SSH is the only way in.
 
+# Resolvido por nome
+data "cloudstack_template" "ubuntu_2404" {
+  template_filter = "featured"
+
+  filter {
+    name  = "name"
+    value = local.template_ubuntu_2404_name
+  }
+}
+
 resource "cloudstack_network" "lab" {
   name             = var.vm_name
   display_text     = "Rede do laboratório Hermes"
@@ -39,7 +49,7 @@ resource "cloudstack_instance" "lab" {
   name             = var.vm_name
   display_name     = "Hermes Lab — TDC"
   service_offering = var.service_offering
-  template         = local.template_ubuntu_2404_id
+  template         = data.cloudstack_template.ubuntu_2404.id
   zone             = local.zone_id
   network_id       = cloudstack_network.lab.id
   keypair          = cloudstack_ssh_keypair.lab.name
@@ -52,7 +62,12 @@ resource "cloudstack_instance" "lab" {
   # the VM on EVERY apply. Left unset, the attribute is Computed and simply
   # takes whatever the offering gives.
 
-  user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
+  # base64gzip, NOT base64encode: o CloudStack limita o userdata em ~16 KB
+  # codificado, e o YAML mais o base64 fica em ~14,7 KB — passa, mas sem
+  # folga nenhuma para o cloud-init crescer. Comprimido são ~6 KB.
+  # cloud-init no Ubuntu 24.04 descompacta user_data gzipada, então o guest
+  # recebe exatamente os mesmos bytes.
+  user_data = base64gzip(templatefile("${path.module}/cloud-init.yaml", {
     root_password     = random_password.root.result
     sandbox_cpu       = var.sandbox_cpu
     sandbox_memory_mb = var.sandbox_memory_mb

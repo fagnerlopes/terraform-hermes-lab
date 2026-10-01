@@ -6,9 +6,19 @@ YELLOW:= \033[0;33m
 RED   := \033[0;31m
 NC    := \033[0m
 
+# Podman first, then Docker: the lab is meant to run rootless, and someone with
+# both installed reached for Podman deliberately. The probe is `info`, not just
+# `command -v` — a binary in PATH that never answers must not be picked here
+# while scripts/setup.sh rejects it and picks the other one. Override with
+# ENGINE=docker to pin it. No `timeout` around the probe: it is not in base
+# macOS. If this ever hangs, scripts/setup.sh catches it before make runs.
+ENGINE ?= $(shell if command -v podman >/dev/null 2>&1 && podman info >/dev/null 2>&1; then echo podman; \
+                   elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then echo docker; \
+                   else echo podman; fi)
+
 # -T disables the pseudo-TTY: without it every captured output carries \r and
 # breaks the shell comparisons below.
-TF := docker compose run --rm -T terraform
+TF := $(ENGINE) compose run --rm -T terraform
 
 KEY        := tools/hermes_lab_key
 CREDS_FILE := CREDENCIAIS.txt
@@ -114,7 +124,7 @@ require-key:
 ensure-init:
 	@if [ ! -d .terraform ]; then \
 		echo "$(BLUE)Construindo a imagem do Terraform...$(NC)"; \
-		docker compose build || exit 1; \
+		$(ENGINE) compose build || exit 1; \
 		echo "$(BLUE)Inicializando o Terraform...$(NC)"; \
 		$(TF) init -input=false; \
 	fi
@@ -302,7 +312,7 @@ lint: ## Roda todas as verificações de qualidade
 		tflint; \
 	else \
 		echo "$(YELLOW)TFLint não instalado no host — rodando via container.$(NC)"; \
-		docker run --rm -v "$$PWD:/data" ghcr.io/terraform-linters/tflint:latest --chdir=/data; \
+		$(ENGINE) run --rm -v "$$PWD:/data:Z" ghcr.io/terraform-linters/tflint:latest --chdir=/data; \
 	fi
 	@echo "$(BLUE)2/3 Formatação$(NC)"
 	@$(MAKE) --no-print-directory fmt-check

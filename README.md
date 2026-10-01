@@ -8,13 +8,27 @@ ao **Telegram**.
 - Conta no [Locaweb Cloud](https://www.locaweb.com.br/locaweb-cloud/).
 - Chaves de API da conta: em <https://painel-cloud.locaweb.com.br>, clique no
   seu nome → **Perfil** → **Gerar novas chaves API/Secretas**.
-- Linux, macOS ou WSL com Docker e:
+- Linux, macOS ou WSL com **Podman ou Docker** e:
 
   ```bash
   sudo apt-get install -y make jq openssh-client openssl curl
   ```
+
+  O `make up` usa o **Podman** se ele responder a `podman info`, senão utiliza o Docker, o mesmo do `make setup`.
   
-  **Windows:** Instale o Docker Desktop, ative a virtualização e configure a integração com o WSL.
+  Voce pode escolher também passando a engine (docker ou podman): `make up ENGINE=docker`.
+
+  Se o `make setup` reclamar, instale o que falta do engine escolhido:
+
+  | Engine | Pacote do compose |
+  | --- | --- |
+  | Podman | `sudo apt-get install -y podman-compose` |
+  | Docker | `sudo apt-get install -y docker-compose-plugin` (no Ubuntu, `docker-compose-v2`) |
+
+  Um Podman instalado mas parado não trava o workshop: o `make` cai para o Docker sozinho, desde que ele responda a chamada ao `docker info`.
+
+  **Windows:** instale o Podman Desktop (OpenSource) (com a integração WSL ligada) ou o
+  Docker Desktop, ative a virtualização e configure a integração com o WSL.
 
   No WSL:
 - Clone o repositório dentro do Linux (`~/`), não em `/mnt/c/`.
