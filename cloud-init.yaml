@@ -131,6 +131,13 @@ runcmd:
     say() { echo "$1" > /var/lib/hermes-lab/status; }
     fail() { echo "ERRO: $1" > /var/lib/hermes-lab/status; exit 1; }
 
+    # cloud-init does not guarantee HOME, and it is needed from the very first
+    # phase on: the Hermes installer runs under `set -u` and dereferences it,
+    # dying with "HOME: unbound variable" before it prints anything useful.
+    # mise.run and the Cofounder PATH line in 4/5 resolve their target from it
+    # too. Export it once here, for every phase.
+    export HOME=/root
+
     # 1) Docker Engine from the official repo. NOT the snap and NOT docker.io:
     #    the snap build breaks the --init / no-new-privileges flags that the
     #    Hermes terminal sandbox relies on.
@@ -177,10 +184,6 @@ runcmd:
     #    still reach "5/5 pronto".
     say "4/5 preparando as dependências do Cofounder"
     warn() { echo "AVISO: $1 falhou — o install.sh do Cofounder refaz esta parte"; }
-
-    # cloud-init does not guarantee HOME, and both mise.run and the PATH line
-    # below resolve their target from it.
-    export HOME=/root
     export DEBIAN_FRONTEND=noninteractive
 
     # podman. Deliberately NOT podman-docker: that package ships a
