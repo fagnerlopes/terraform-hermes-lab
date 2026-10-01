@@ -140,10 +140,14 @@ e confira: YAML válido, `#cloud-config` na coluna 0, nenhum `${` residual, e
   ninguém e o download é caro numa rede de evento). O state entra na lista
   porque guarda o `random_password` em texto puro — é credencial, não só
   registro.
-- **Nunca ponha um `docker compose run` na mesma linha de receita que um
-  `read`.** Ele consome o stdin e a confirmação nunca chega: o `read` recebe
-  vazio e o comando se comporta como cancelado. Aconteceu no `clear`; a solução
-  é `</dev/null` na chamada do Terraform.
+- **Todo `docker compose run` numa receita precisa de `</dev/null`.** Ele
+  consome o stdin de quem vier depois na mesma linha. Apareceu duas vezes, de
+  formas diferentes: no `clear`, o `read` recebia vazio e a confirmação se
+  comportava como cancelada; no `ssh`, a substituição que busca o IP engolia o
+  stdin e `echo 'cmd' | make ssh` conectava mas ignorava o comando — o
+  interativo funcionava, então passou despercebido. A solução é a mesma nos
+  dois casos, e já está aplicada em `wait-ready`, `ssh`, `status` e `logs`.
+  Alvo novo que leia o IP, aplique também.
 - **`CREDENCIAIS.txt` é gerado pelo `make credentials`**, com `umask 077` e
   `chmod 600`, e removido pelo `make down` junto com a chave. Está no
   `.gitignore`; se mudar o nome, mude nos dois lugares.

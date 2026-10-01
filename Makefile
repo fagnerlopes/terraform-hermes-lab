@@ -168,7 +168,7 @@ plan-and-confirm:
 	fi
 
 wait-ready:
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(RED)Não consegui obter o IP. Rode 'make output'.$(NC)"; exit 1; fi; \
 	echo ""; \
 	INITIAL=$$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null | tr -d '\r'); \
@@ -277,19 +277,19 @@ credentials: ## Mostra IP e senha, e grava o CREDENCIAIS.txt
 
 ssh: ## Abre uma sessão SSH na VM
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP || true   # exit code of an interactive shell is not a make failure
 
 status: ## Mostra em que fase está a instalação
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	echo "$(BLUE)Fase:$(NC) $$(ssh $(SSH_OPTS) root@$$IP 'hermes-lab-status' 2>/dev/null || echo 'sem resposta no SSH')"
 
 logs: ## Acompanha o log da instalação na VM
 	@$(MAKE) --no-print-directory require-key
-	@IP=$$($(TF) output -raw public_ip 2>/dev/null | tr -d '\r'); \
+	@IP=$$($(TF) output -raw public_ip 2>/dev/null </dev/null | tr -d '\r'); \
 	if [ -z "$$IP" ]; then echo "$(YELLOW)Lab não provisionado. Rode 'make up'.$(NC)"; exit 1; fi; \
 	ssh $(SSH_OPTS) root@$$IP 'tail -f -n 200 /var/log/hermes-lab.log' || true   # Ctrl-C on the tail is not a make failure
 
